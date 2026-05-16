@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Ops — agents.garvityagnik.in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg0: #080808;
+    --bg1: #0c0c0c;
+    --bg2: #111111;
+    --border: #161616;
+    --border2: #1e1e1e;
+    --text1: #d4d4d4;
+    --text2: #666;
+    --text3: #333;
+    --text4: #222;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg0);
+    color: var(--text1);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TOPBAR ───────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg0);
+    position: sticky; top: 0; z-index: 200;
+  }
+  .topbar-left  { display: flex; align-items: center; gap: 16px; }
+  .logo         { font-size: 12px; letter-spacing: 0.22em; color: #444; text-transform: uppercase; }
+  .logo b       { color: #FF4D00; font-weight: 500; }
+  .subdomain    { font-size: 9px; color: var(--text3); letter-spacing: 0.12em; padding: 2px 8px; border: 1px solid var(--border2); border-radius: 2px; }
+  .live-pill    { display: flex; align-items: center; gap: 5px; font-size: 9px; letter-spacing: 0.15em; color: #444; }
+  .live-dot     { width: 5px; height: 5px; border-radius: 50%; background: #00D64F; animation: pulse 2s infinite; }
+  .live-dot.err { background: #ff4444; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.2} }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .clock        { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
+  .refresh-info { font-size: 9px; color: var(--text4); letter-spacing: 0.08em; }
+
+  /* ── LAYOUT ───────────────────────────────────── */
+  .layout {
+    display: grid;
+    grid-template-columns: 252px 1fr 256px;
+    min-height: calc(100vh - 48px);
+  }
+
+  /* ── SIDEBAR ──────────────────────────────────── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: #050505;
+    padding: 18px 0;
+    overflow-y: auto;
+  }
+  .sidebar-sec {
+    font-size: 8px;
+    letter-spacing: 0.25em;
+    color: var(--text4);
+    padding: 0 16px;
+    margin-bottom: 10px;
+    margin-top: 20px;
+    text-transform: uppercase;
+  }
+  .sidebar-sec:first-child { margin-top: 0; }
+
+  .agent-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 16px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 0.12s;
+    position: relative;
+  }
+  .agent-row:hover        { background: #0a0a0a; }
+  .agent-row.sel          { background: #0e0e0e; border-left-color: var(--ac); }
+  .agent-row.is-busy      { border-left-color: var(--ac); }
+  .agent-row.is-offline   { opacity: 0.4; }
+
+  .av {
+    width: 30px; height: 30px; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    border: 1px solid var(--ac);
+    background: color-mix(in srgb, var(--ac) 8%, transparent);
+    color: var(--ac);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .sdot {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 7px; height: 7px; border-radius: 50%;
+    border: 1.5px solid #050505;
+  }
+  .s-active  { background: #00D64F; animation: pulse 2s infinite; }
+  .s-busy    { background: #FF9500; animation: pulse 1s infinite; }
+  .s-waiting { background: #7B2FFF; animation: pulse 1.5s infinite; }
+  .s-idle    { background: #2a2a2a; }
+  .s-offline { background: #1a1a1a; }
+
+  .ai { flex: 1; min-width: 0; }
+  .an { font-size: 11px; color: #bbb; letter-spacing: 0.04em; }
+  .ar { font-size: 8px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .tc {
+    font-size: 8px; padding: 1px 5px; border-radius: 2px;
+    background: var(--bg2); color: var(--text3);
+    flex-shrink: 0;
+  }
+  .tc.busy { background: color-mix(in srgb, var(--ac) 12%, transparent); color: var(--ac); }
+
+  /* ── MAIN ─────────────────────────────────────── */
+  .main { padding: 22px 26px; overflow-y: auto; }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .stat-card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 13px 15px;
+  }
+  .sl { font-size: 8px; letter-spacing: 0.18em; color: var(--text4); margin-bottom: 7px; text-transform: uppercase; }
+  .sv { font-size: 24px; color: var(--text1); letter-spacing: -0.02em; line-height: 1; }
+  .ss { font-size: 8px; color: var(--text3); margin-top: 3px; }
+
+  .section-hd {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 13px;
+  }
+  .sh-label { font-size: 8px; letter-spacing: 0.2em; color: var(--text4); text-transform: uppercase; }
+  .sh-sub   { font-size: 8px; color: var(--text4); letter-spacing: 0.08em; }
+
+  /* pipeline */
+  .pipeline-box {
+    background: var(--bg1); border: 1px solid var(--border);
+    border-radius: 3px; padding: 16px; margin-bottom: 22px;
+  }
+  .pip-empty { font-size: 11px; color: var(--text3); font-style: italic; text-align: center; padding: 20px 0; }
+  .pip-track {
+    display: flex; align-items: center;
+    overflow-x: auto; padding-bottom: 2px; gap: 0;
+  }
+  .pip-track::-webkit-scrollbar { height: 2px; }
+  .pip-track::-webkit-scrollbar-thumb { background: var(--border2); }
+  .pip-node { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 62px; }
+  .pip-circle {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; border: 1px solid;
+    position: relative; transition: all 0.2s;
+  }
+  .pip-circle.pip-done    { background: color-mix(in srgb, var(--ac) 22%, transparent); border-color: var(--ac); color: var(--ac); }
+  .pip-circle.pip-current { background: color-mix(in srgb, var(--ac) 14%, transparent); border-color: var(--ac); color: var(--ac); box-shadow: 0 0 10px color-mix(in srgb, var(--ac) 35%, transparent); }
+  .pip-circle.pip-pending { background: transparent; border-color: #1e1e1e; color: #2a2a2a; }
+  .pip-circle.pip-current::after {
+    content: ''; position: absolute; inset: -5px; border-radius: 50%;
+    border: 1px solid var(--ac); animation: ringpulse 2s infinite;
+  }
+  @keyframes ringpulse { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(1.6);opacity:0} }
+  .pip-lbl { font-size: 8px; text-align: center; letter-spacing: 0.04em; }
+  .pip-st  { font-size: 7px; text-align: center; }
+  .pip-arrow { flex: 1; min-width: 16px; height: 1px; background: var(--border2); margin-bottom: 22px; position: relative; }
+  .pip-arrow::after { content: ''; position: absolute; right: 0; top: -3px; border-left: 4px solid var(--border2); border-top: 3px solid transparent; border-bottom: 3px solid transparent; }
+  .pip-arrow.done-arrow { background: #FF4D00; }
+  .pip-arrow.done-arrow::after { border-left-color: #FF4D00; }
+
+  /* task cards */
+  .tasks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+  .task-card {
+    background: var(--bg1); border: 1px solid var(--border);
+    border-left: 2px solid var(--ac);
+    border-radius: 3px; padding: 13px;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .task-card:hover { background: #0f0f0f; }
+  .tc-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+  .tc-ag { font-size: 8px; color: var(--ac); letter-spacing: 0.1em; }
+  .tc-badge { font-size: 7px; padding: 2px 6px; border-radius: 2px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .b-busy    { background: #FF950018; color: #FF9500; }
+  .b-waiting { background: #7B2FFF18; color: #7B2FFF; }
+  .b-done    { background: #00D64F18; color: #00D64F; }
+  .b-queued  { background: #33333318; color: #555; }
+  .tc-title { font-size: 10px; color: #aaa; margin-bottom: 7px; line-height: 1.5; }
+  .tc-bar   { height: 2px; background: #161616; border-radius: 1px; overflow: hidden; }
+  .tc-fill  { height: 100%; border-radius: 1px; transition: width 1.5s ease; }
+  .tc-meta  { display: flex; justify-content: space-between; margin-top: 5px; font-size: 8px; color: var(--text4); }
+  .no-tasks { font-size: 11px; color: var(--text3); font-style: italic; text-align: center; padding: 30px 0; grid-column: 1/-1; }
+
+  /* feed */
+  .feed-box { background: var(--bg1); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+  .feed-hd  { padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 8px; letter-spacing: 0.18em; color: var(--text4); }
+  .feed-body { max-height: 180px; overflow-y: auto; }
+  .feed-body::-webkit-scrollbar { width: 2px; }
+  .feed-body::-webkit-scrollbar-thumb { background: var(--border2); }
+  .feed-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 14px; border-bottom: 1px solid #0c0c0c; }
+  .fi-dot   { width: 4px; height: 4px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .fi-txt   { font-size: 9px; color: #444; line-height: 1.55; flex: 1; }
+  .fi-txt b { color: #666; font-weight: 500; }
+  .fi-time  { font-size: 8px; color: var(--text4); white-space: nowrap; padding-top: 2px; flex-shrink: 0; }
+  .feed-empty { font-size: 10px; color: var(--text4); font-style: italic; text-align: center; padding: 20px; }
+
+  /* ── RIGHT PANEL ──────────────────────────────── */
+  .rpanel {
+    border-left: 1px solid var(--border);
+    background: #050505;
+    padding: 18px;
+    overflow-y: auto;
+  }
+  .rp-title { font-size: 8px; letter-spacing: 0.2em; color: var(--text4); margin-bottom: 14px; text-transform: uppercase; }
+
+  /* nova alert */
+  .nova-alert {
+    background: #0a0714;
+    border: 1px solid #7B2FFF28;
+    border-radius: 3px; padding: 12px;
+    margin-bottom: 14px;
+    animation: novaPulse 3s infinite;
+  }
+  @keyframes novaPulse { 0%,100%{border-color:#7B2FFF28} 50%{border-color:#7B2FFF60} }
+  .nova-tag  { font-size: 8px; color: #7B2FFF; letter-spacing: 0.1em; margin-bottom: 5px; }
+  .nova-body { font-size: 10px; color: #555; line-height: 1.6; margin-bottom: 8px; }
+  .nova-actions { display: flex; gap: 6px; }
+  .nova-btn {
+    background: #7B2FFF18; border: 1px solid #7B2FFF35;
+    color: #7B2FFF; font-size: 8px; letter-spacing: 0.1em;
+    padding: 4px 10px; border-radius: 2px;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.12s;
+  }
+  .nova-btn:hover { background: #7B2FFF30; }
+  .nova-btn.skip  { background: transparent; color: var(--text3); border-color: var(--border2); }
+
+  /* agent detail */
+  .agent-detail-card {
+    background: var(--bg1); border: 1px solid var(--border);
+    border-radius: 3px; padding: 14px; margin-bottom: 12px;
+  }
+  .ad-name  { font-size: 18px; letter-spacing: 0.04em; margin-bottom: 2px; }
+  .ad-role  { font-size: 8px; color: var(--text4); margin-bottom: 13px; }
+  .ad-row   { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .ad-k     { font-size: 8px; color: var(--text4); letter-spacing: 0.1em; }
+  .ad-v     { font-size: 8px; color: #555; }
+
+  /* installed-in chips */
+  .installed-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .inst-chip {
+    font-size: 8px; padding: 2px 7px; border-radius: 2px;
+    border: 1px solid var(--border2); color: var(--text3);
+    letter-spacing: 0.06em;
+  }
+  .inst-chip.active { border-color: var(--ac); color: var(--ac); background: color-mix(in srgb, var(--ac) 8%, transparent); }
+
+  /* funny status box */
+  .funny-box {
+    background: #0a0a0a; border: 1px solid #1a1a1a;
+    border-radius: 3px; padding: 10px 12px;
+    margin-top: 10px; font-size: 10px; color: #3a3a3a;
+    font-style: italic; line-height: 1.6;
+    display: none;
+  }
+
+  /* progress in detail */
+  .detail-prog-bar  { height: 2px; background: #111; border-radius: 1px; overflow: hidden; margin: 3px 0 2px; }
+  .detail-prog-fill { height: 100%; border-radius: 1px; }
+
+  /* queued */
+  .q-item {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 7px 10px; background: var(--bg1);
+    border: 1px solid var(--border); border-radius: 3px;
+    margin-bottom: 5px; font-size: 9px; color: #444;
+  }
+  .q-num { font-size: 8px; color: var(--text4); flex-shrink: 0; padding-top: 1px; }
+
+  /* error banner */
+  .err-banner {
+    background: #1a0a0a; border-bottom: 1px solid #ff444420;
+    padding: 8px 28px; font-size: 9px; color: #ff6666;
+    display: none; letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+
+<div class="err-banner" id="err-banner">
+  ⚠ Could not reach status API — showing last cached data. Check Vercel logs.
+</div>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">CREATIVE OPS <b>SYSTEM</b></div>
+    <div class="subdomain">agents.garvityagnik.in</div>
+    <div class="live-pill">
+      <div class="live-dot" id="live-dot"></div>
+      <span id="conn-label">CONNECTING...</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="refresh-info" id="refresh-info">—</div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-sec">Agent Roster</div>
+    <div id="agent-list"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="sl">Online Agents</div>
+        <div class="sv" id="s-online">—</div>
+        <div class="ss">of 9 total</div>
+      </div>
+      <div class="stat-card">
+        <div class="sl">Busy Now</div>
+        <div class="sv" id="s-busy">—</div>
+        <div class="ss">working hard</div>
+      </div>
+      <div class="stat-card">
+        <div class="sl">Waiting Approval</div>
+        <div class="sv" id="s-waiting">—</div>
+        <div class="ss">need your call</div>
+      </div>
+      <div class="stat-card">
+        <div class="sl">Done Today</div>
+        <div class="sv" id="s-done">—</div>
+        <div class="ss">tasks complete</div>
+      </div>
+    </div>
+
+    <div class="pipeline-box">
+      <div class="section-hd">
+        <div class="sh-label" id="pip-project-label">No active pipeline</div>
+        <div class="sh-sub" id="pip-step-label"></div>
+      </div>
+      <div id="pipeline-wrap"></div>
+    </div>
+
+    <div class="section-hd">
+      <div class="sh-label">Live Task Board</div>
+      <div class="sh-sub" id="last-updated">—</div>
+    </div>
+    <div class="tasks-grid" id="tasks-grid"></div>
+
+    <div class="feed-box">
+      <div class="feed-hd">ACTIVITY FEED</div>
+      <div class="feed-body" id="feed-body"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="rpanel">
+    <div class="rp-title">Agent Detail</div>
+    <div id="nova-zone"></div>
+    <div id="detail-zone"></div>
+    <div style="margin-top:16px;">
+      <div class="rp-title">Queued</div>
+      <div id="queue-zone"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────────────────────
+const API_URL      = '/api/status';
+const POLL_MS      = 30000; // 30 seconds
+const SECRET       = localStorage.getItem('dashboard_secret') || '';
+
+// Funny idle messages per agent
+const FUNNY = {
+  aria: ["Waiting for orders, boss.", "Refreshing inbox for the 47th time.", "Reorganising the pipeline in my head.", "Playing 4D chess with task queues."],
+  desi: ["Adjusting kerning by 0.1px... again.", "Staring at the Pantone book.", "Playing pool in the break room. 🎱", "Debating serif vs sans-serif internally."],
+  idea: ["Daydreaming about gradients.", "Sketching on napkins (digitally).", "Listening to lo-fi and 'ideating'.", "Having an existential crisis about Comic Sans."],
+  mova: ["Watching After Effects render... forever.", "Playing a 15-second loop. On repeat. 🎬", "Calculating frame rates for fun.", "Easing functions. Just easing functions."],
+  bryn: ["Reading a 47-page brand guidelines doc. For fun.", "Rewriting the brief nobody asked for.", "Strategically sipping chai. ☕", "In the zone. Do not disturb."],
+  copy: ["Thesaurus open, vibes immaculate.", "Finding the perfect em dash. —", "Writing headlines nobody will use.", "Speedrunning 'just one more draft'. ✍️"],
+  soci: ["Scrolling for 'research'. Sure. 📱", "Hashtagging hashtags with hashtags.", "Calculating optimal post time. Again.", "Waiting for the algorithm to make sense."],
+  arch: ["Building workflows nobody asked for.", "Diagramming the diagram diagram. 🗂️", "YAML goes brrr.", "Optimising the optimisation process."],
+  nova: ["Scouting for new talent. 🔍", "Reading CVs from imaginary agents.", "Playing HR simulator 2026.", "Gap detected: no Coffee Agent. Investigating."],
+};
+
+function randomFunny(id) {
+  const msgs = FUNNY[id] || ["Chilling."];
+  return msgs[Math.floor(Math.random() * msgs.length)];
+}
+
+const PLATFORM_LABELS = {
+  'claude-projects': 'Claude Projects',
+  'claude-code':     'Claude Code',
+  'api':             'API',
+  'n8n':             'n8n',
+  'make':            'Make.com',
+};
+
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+let state       = null;
+let selectedId  = 'aria';
+let feedLog     = [];
+let pollTimer   = null;
+
+// ─────────────────────────────────────────────────────────────
+//  FETCH
+// ─────────────────────────────────────────────────────────────
+async function fetchStatus() {
+  try {
+    const res = await fetch(API_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('non-200');
+    const data = await res.json();
+    document.getElementById('err-banner').style.display = 'none';
+    document.getElementById('live-dot').className = 'live-dot';
+    document.getElementById('conn-label').textContent = 'LIVE';
+    return data;
+  } catch (e) {
+    document.getElementById('err-banner').style.display = 'block';
+    document.getElementById('live-dot').className = 'live-dot err';
+    document.getElementById('conn-label').textContent = 'OFFLINE';
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  RENDER HELPERS
+// ─────────────────────────────────────────────────────────────
+function dotClass(status) {
+  return { active:'s-active', busy:'s-busy', waiting:'s-waiting', idle:'s-idle', offline:'s-offline' }[status] || 's-idle';
+}
+
+function renderSidebar(agents) {
+  const el = document.getElementById('agent-list');
+  el.innerHTML = Object.values(agents).map(a => `
+    <div class="agent-row ${selectedId===a.id?'sel':''} ${a.status==='busy'||a.status==='active'?'is-busy':''} ${a.status==='offline'?'is-offline':''}"
+         style="--ac:${a.color}"
+         onclick="selectAgent('${a.id}')">
+      <div class="av">
+        ${a.emoji}
+        <div class="sdot ${dotClass(a.status)}"></div>
+      </div>
+      <div class="ai">
+        <div class="an">${a.name}</div>
+        <div class="ar">${a.role}</div>
+      </div>
+      <div class="tc ${a.status==='busy'||a.status==='active'?'busy':''}" style="--ac:${a.color}">
+        ${a.status==='offline'?'off':a.status==='idle'?'—':a.status.slice(0,4)}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderStats(agents) {
+  const vals = Object.values(agents);
+  document.getElementById('s-online').textContent  = vals.filter(a=>a.status!=='offline').length;
+  document.getElementById('s-busy').textContent    = vals.filter(a=>a.status==='busy'||a.status==='active').length;
+  document.getElementById('s-waiting').textContent = vals.filter(a=>a.status==='waiting').length;
+  document.getElementById('s-done').textContent    = vals.reduce((s,a)=>s+(a.tasks_completed_today||0),0);
+}
+
+function renderPipeline(pipeline) {
+  const wrap = document.getElementById('pipeline-wrap');
+  if (!pipeline || !pipeline.active_project) {
+    document.getElementById('pip-project-label').textContent = 'No active pipeline';
+    document.getElementById('pip-step-label').textContent = '';
+    wrap.innerHTML = `<div class="pip-empty">— No project in pipeline right now. Drop a brief to ARIA. —</div>`;
+    return;
+  }
+  const steps = pipeline.steps || [];
+  const currentIdx = steps.findIndex(s=>s.state==='current');
+  document.getElementById('pip-project-label').textContent = 'Pipeline — ' + pipeline.active_project;
+  document.getElementById('pip-step-label').textContent = currentIdx>=0 ? `STEP ${currentIdx+1} OF ${steps.length}` : '';
+  wrap.innerHTML = `<div class="pip-track">${steps.map((s,i)=>`
+    ${i>0?`<div class="pip-arrow ${steps[i-1].state==='done'?'done-arrow':''}"></div>`:''}
+    <div class="pip-node" style="--ac:${s.color||'#444'}">
+      <div class="pip-circle pip-${s.state}" style="border-color:${s.color||'#1e1e1e'};color:${s.state==='pending'?'#2a2a2a':s.color};background:${s.state==='pending'?'transparent':s.color+'18'}">
+        ${s.state==='done'?'✓':s.emoji||'○'}
+      </div>
+      <div class="pip-lbl" style="color:${s.state==='pending'?'#1e1e1e':s.state==='current'?s.color:'#3a3a3a'}">${s.name}</div>
+      <div class="pip-st"  style="color:${s.state==='done'?'#00D64F':s.state==='current'?s.color:'#1a1a1a'}">${s.state==='done'?'done':s.state==='current'?'●':''}</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function renderTasks(agents) {
+  const grid = document.getElementById('tasks-grid');
+  const activeTasks = [];
+  Object.values(agents).forEach(a => {
+    if ((a.status==='busy'||a.status==='waiting'||a.status==='active') && a.current_task) {
+      activeTasks.push({
+        agent: a.name,
+        color: a.color,
+        title: a.current_task,
+        project: a.current_project,
+        status: a.status,
+      });
+    }
+  });
+  if (activeTasks.length === 0) {
+    grid.innerHTML = `<div class="no-tasks">— All agents idle. Nothing in progress. —</div>`;
+    return;
+  }
+  grid.innerHTML = activeTasks.map(t => `
+    <div class="task-card" style="--ac:${t.color}">
+      <div class="tc-hd">
+        <div class="tc-ag" style="color:${t.color}">${t.agent}</div>
+        <div class="tc-badge b-${t.status==='waiting'?'waiting':t.status==='busy'?'busy':'queued'}">${t.status}</div>
+      </div>
+      <div class="tc-title">${t.title}${t.project?`<br><span style="color:#2a2a2a;font-size:8px">${t.project}</span>`:''}</div>
+      <div class="tc-bar"><div class="tc-fill" style="width:${t.status==='waiting'?100:50}%;background:${t.color}"></div></div>
+      <div class="tc-meta"><span>in progress</span><span>${t.status==='waiting'?'awaiting approval':'—'}</span></div>
+    </div>
+  `).join('');
+}
+
+function renderDetail(agents) {
+  const a = agents[selectedId];
+  if (!a) return;
+  const zone = document.getElementById('detail-zone');
+  const isIdle    = a.status==='idle';
+  const isOffline = a.status==='offline';
+  const installed = a.installed_in || [];
+
+  zone.innerHTML = `
+    <div class="agent-detail-card" style="--ac:${a.color}">
+      <div class="ad-name" style="color:${a.color}">${a.name}</div>
+      <div class="ad-role">${a.role}</div>
+
+      <div class="ad-row">
+        <div class="ad-k">STATUS</div>
+        <div class="ad-v" style="color:${isOffline?'#333':isIdle?'#2a2a2a':a.color}">${a.status.toUpperCase()}</div>
+      </div>
+      <div class="ad-row">
+        <div class="ad-k">CURRENT TASK</div>
+        <div class="ad-v">${a.current_task||'—'}</div>
+      </div>
+      <div class="ad-row">
+        <div class="ad-k">PROJECT</div>
+        <div class="ad-v">${a.current_project||'—'}</div>
+      </div>
+      <div class="ad-row">
+        <div class="ad-k">DONE TODAY</div>
+        <div class="ad-v">${a.tasks_completed_today||0} tasks</div>
+      </div>
+      <div class="ad-row">
+        <div class="ad-k">UPTIME</div>
+        <div class="ad-v">${a.uptime_percent||'—'}%</div>
+      </div>
+
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+        <div class="ad-k" style="margin-bottom:6px;">INSTALLED IN</div>
+        <div class="installed-chips">
+          ${['claude-projects','claude-code','api','n8n','make'].map(p=>`
+            <div class="inst-chip ${installed.includes(p)?'active':''}" style="${installed.includes(p)?`--ac:${a.color}`:''}">
+              ${PLATFORM_LABELS[p]}
+            </div>
+          `).join('')}
+        </div>
+        ${installed.length===0?`<div style="font-size:8px;color:#1a1a1a;margin-top:6px;">Not installed anywhere yet</div>`:''}
+      </div>
+
+      ${(isIdle || isOffline) ? `
+        <div class="funny-box" id="funny-box" style="display:block">
+          ${isOffline ? '🔌 Offline — not installed in any platform currently.' : '💤 ' + randomFunny(a.id||selectedId)}
+        </div>
+      ` : ''}
+
+      ${a.current_task && !isIdle && !isOffline ? `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div class="ad-k" style="margin-bottom:6px;">PROGRESS</div>
+          <div style="font-size:9px;color:#555;margin-bottom:4px">${a.current_task}</div>
+          <div class="detail-prog-bar"><div class="detail-prog-fill" style="width:${a.status==='waiting'?100:55}%;background:${a.color}"></div></div>
+          <div style="font-size:8px;color:#222;text-align:right;margin-top:2px">${a.status==='waiting'?'100% — awaiting approval':'In progress'}</div>
+        </div>
+      ` : ''}
+    </div>
+
+    <div style="margin-top:4px;">
+      <div class="rp-title" style="margin-bottom:8px;">Quick Update</div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        ${['idle','busy','waiting','offline'].map(s=>`
+          <button onclick="quickUpdate('${selectedId}','${s}')"
+            style="background:${a.status===s?a.color+'18':'transparent'};border:1px solid ${a.status===s?a.color+'40':'var(--border2)'};
+                   color:${a.status===s?a.color:'var(--text3)'};font-family:inherit;font-size:8px;
+                   letter-spacing:0.1em;padding:5px 10px;border-radius:2px;cursor:pointer;text-align:left;transition:all .12s"
+          >${s.toUpperCase()} ${a.status===s?'← current':''}</button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  // queue
+  const qzone = document.getElementById('queue-zone');
+  qzone.innerHTML = `<div style="font-size:9px;color:var(--text4);font-style:italic">
+    Queue managed via ARIA. No pending items.
+  </div>`;
+}
+
+function renderNova(alerts) {
+  const zone = document.getElementById('nova-zone');
+  if (!alerts || alerts.length === 0) { zone.innerHTML = ''; return; }
+  zone.innerHTML = alerts.map((al,i) => `
+    <div class="nova-alert">
+      <div class="nova-tag">✳ NOVA ALERT</div>
+      <div class="nova-body">${al.message}</div>
+      <div class="nova-actions">
+        <button class="nova-btn" onclick="onboardAgent(${i})">Onboard</button>
+        <button class="nova-btn skip" onclick="dismissAlert(${i})">Skip</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderFeed() {
+  const body = document.getElementById('feed-body');
+  if (feedLog.length === 0) {
+    body.innerHTML = `<div class="feed-empty">No activity yet — system is quiet.</div>`;
+    return;
+  }
+  body.innerHTML = feedLog.slice(0,12).map(f=>`
+    <div class="feed-item">
+      <div class="fi-dot" style="background:${f.color}"></div>
+      <div class="fi-txt"><b style="color:${f.color}">${f.agent}</b> — ${f.text}</div>
+      <div class="fi-time">${f.time}</div>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  RENDER ALL
+// ─────────────────────────────────────────────────────────────
+function renderAll(data) {
+  const agents = data.agents;
+  // Inject id into each agent
+  Object.keys(agents).forEach(k => { agents[k].id = k; });
+
+  renderSidebar(agents);
+  renderStats(agents);
+  renderPipeline(data.pipeline);
+  renderTasks(agents);
+  renderDetail(agents);
+  renderNova(data.nova_alerts);
+  renderFeed();
+
+  const ts = new Date(data.system?.last_updated || Date.now());
+  document.getElementById('last-updated').textContent = 'last updated ' + ts.toLocaleTimeString('en-IN');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  POLL
+// ─────────────────────────────────────────────────────────────
+async function poll() {
+  const data = await fetchStatus();
+  if (data) {
+    state = data;
+    renderAll(data);
+  }
+  let next = POLL_MS;
+  document.getElementById('refresh-info').textContent = `next refresh in ${next/1000}s`;
+  let countdown = next/1000;
+  const countInt = setInterval(()=>{
+    countdown--;
+    document.getElementById('refresh-info').textContent = `next refresh in ${countdown}s`;
+    if(countdown<=0) clearInterval(countInt);
+  }, 1000);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ACTIONS
+// ─────────────────────────────────────────────────────────────
+function selectAgent(id) {
+  selectedId = id;
+  if (state) renderAll(state);
+}
+
+async function quickUpdate(agentId, newStatus) {
+  const sec = localStorage.getItem('dashboard_secret');
+  if (!sec) {
+    const s = prompt('Enter dashboard secret:');
+    if (!s) return;
+    localStorage.setItem('dashboard_secret', s);
+  }
+  const secret = localStorage.getItem('dashboard_secret');
+
+  // Optimistic update
+  if (state && state.agents[agentId]) {
+    state.agents[agentId].status = newStatus;
+    if (newStatus==='idle'||newStatus==='offline') {
+      state.agents[agentId].current_task = null;
+      state.agents[agentId].current_project = null;
+    }
+    renderAll(state);
+
+    feedLog.unshift({
+      agent: state.agents[agentId].name,
+      color: state.agents[agentId].color,
+      text: `Status changed to <b>${newStatus}</b>`,
+      time: 'just now'
+    });
+    renderFeed();
+  }
+
+  // Real API update
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ secret, agent_id: agentId, updates: { status: newStatus } })
+    });
+  } catch(e) {
+    console.warn('API update failed (may be offline)', e);
+  }
+}
+
+function onboardAgent(idx) {
+  if (!state) return;
+  const alert = state.nova_alerts[idx];
+  feedLog.unshift({ agent:'NOVA', color:'#7B2FFF', text:`<b>${alert?.agent_name||'New Agent'}</b> onboarded — added to system`, time:'just now' });
+  state.nova_alerts.splice(idx,1);
+  renderAll(state);
+}
+
+function dismissAlert(idx) {
+  if (!state) return;
+  state.nova_alerts.splice(idx,1);
+  renderAll(state);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CLOCK
+// ─────────────────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ─────────────────────────────────────────────────────────────
+//  FALLBACK DEMO MODE (when API not connected)
+// ─────────────────────────────────────────────────────────────
+async function initDemoFallback() {
+  // Load status.json directly if API not available (for local preview)
+  try {
+    const res = await fetch('/status.json');
+    if (res.ok) {
+      const data = await res.json();
+      state = data;
+      Object.keys(data.agents).forEach(k => { data.agents[k].id = k; });
+      renderAll(data);
+    }
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────────────────────────
+updateClock();
+setInterval(updateClock, 1000);
+
+// Try API first, fallback to demo
+poll().then(() => {
+  if (!state) initDemoFallback();
+});
+setInterval(poll, POLL_MS);
+</script>
+</body>
+</html>

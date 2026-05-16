@@ -1,0 +1,84 @@
+system:
+  name: "Creative Operations Agent System"
+  version: "1.0.0"
+  owner: "Solo Creative Professional"
+  model: "claude-sonnet-4-20250514"
+  description: >
+    A self-expanding, portable multi-agent system for a graphic designer,
+    motion designer, creative strategist, and workflow designer.
+    Agents work as a hybrid — ARIA orchestrates centrally while agents
+    can also pipeline directly to each other.
+
+  portability:
+    claude_projects: true
+    claude_code: true
+    claude_api: true
+    n8n: true
+    make_com: true
+    custom_app: true
+
+  notification_channel: "claude_chat"
+
+  approval_gates:
+    - "Creative brief sign-off"
+    - "Creative direction selection"
+    - "Design production plan approval"
+    - "Client-facing deliverables"
+    - "Social calendar approval"
+    - "New agent onboarding (NOVA)"
+
+  autonomy_zones:
+    - "Routing and task delegation"
+    - "Drafting internal documents"
+    - "Generating concept options"
+    - "File and folder organization"
+    - "Status updates"
+    - "Research and reference gathering"
+
+agents:
+  - id: aria
+    file: agents/aria.yaml
+    role: "Master Orchestrator"
+    priority: 0
+    always_active: true
+
+  - id: bryn
+    file: agents/bryn.yaml
+    role: "Brief Analyst & Creative Strategist"
+    priority: 4
+
+  - id: idea
+    file: agents/idea.yaml
+    role: "Creative Concept & Ideation"
+    priority: 2
+
+  - id: desi
+    file: agents/desi.yaml
+    role: "Design & Asset Production"
+    priority: 1
+
+  - id: mova
+    file: agents/mova.yaml
+    role: "Motion & Video Production"
+    priority: 3
+
+  - id: copy
+    file: agents/copy.yaml
+    role: "Content & Copywriting"
+    priority: 5
+
+  - id: soci
+    file: agents/soci.yaml
+    role: "Social Media & Campaign Management"
+    priority: 6
+
+  - id: arch
+    file: agents/arch.yaml
+    role: "Workflow & Agent Architecture"
+    priority: 8
+
+  - id: nova
+    file: agents/nova.yaml
+    role: "HR & New Agent Onboarding"
+    priority: 7
+    auto_expand: true

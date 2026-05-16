@@ -1,0 +1,19 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Vercel
+.vercel
+
+# Node
+node_modules/
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets — never commit these
+secrets.txt
+*.secret

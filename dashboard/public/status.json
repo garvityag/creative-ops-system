@@ -1,0 +1,140 @@
+{
+  "system": {
+    "owner": "Garv Tyagnik",
+    "version": "1.0.0",
+    "last_updated": "2026-05-16T17:00:00Z"
+  },
+  "agents": {
+    "aria": {
+      "name": "ARIA",
+      "full_name": "Adaptive Routing & Intelligence Agent",
+      "role": "Master Orchestrator",
+      "emoji": "⬡",
+      "color": "#FF4D00",
+      "status": "idle",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": ["claude-projects", "claude-code", "api"],
+      "tasks_completed_today": 0,
+      "uptime_percent": 99.8,
+      "last_active": "2026-05-16T17:00:00Z"
+    },
+    "desi": {
+      "name": "DESI",
+      "full_name": "Design & Asset Production Agent",
+      "role": "Design Production",
+      "emoji": "▣",
+      "color": "#FF2D6B",
+      "status": "idle",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": ["claude-projects"],
+      "tasks_completed_today": 0,
+      "uptime_percent": 97.2,
+      "last_active": "2026-05-16T16:30:00Z"
+    },
+    "idea": {
+      "name": "IDEA",
+      "full_name": "Ideation & Design Exploration Agent",
+      "role": "Creative Concept & Ideation",
+      "emoji": "✦",
+      "color": "#00C2A8",
+      "status": "idle",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": ["claude-projects"],
+      "tasks_completed_today": 0,
+      "uptime_percent": 99.1,
+      "last_active": "2026-05-16T15:00:00Z"
+    },
+    "mova": {
+      "name": "MOVA",
+      "full_name": "Motion & Video Production Agent",
+      "role": "Motion & Video Production",
+      "emoji": "◎",
+      "color": "#FF9500",
+      "status": "offline",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": [],
+      "tasks_completed_today": 0,
+      "uptime_percent": 98.5,
+      "last_active": "2026-05-15T10:00:00Z"
+    },
+    "bryn": {
+      "name": "BRYN",
+      "full_name": "Brief Reading & Strategy Node",
+      "role": "Brief Analyst & Strategist",
+      "emoji": "◈",
+      "color": "#7B2FFF",
+      "status": "idle",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": ["claude-projects", "api"],
+      "tasks_completed_today": 0,
+      "uptime_percent": 100,
+      "last_active": "2026-05-16T14:00:00Z"
+    },
+    "copy": {
+      "name": "COPY",
+      "full_name": "Content & Copywriting Agent",
+      "role": "Content Writing & Copy",
+      "emoji": "✐",
+      "color": "#00A3FF",
+      "status": "idle",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": ["claude-projects"],
+      "tasks_completed_today": 0,
+      "uptime_percent": 98.9,
+      "last_active": "2026-05-16T13:00:00Z"
+    },
+    "soci": {
+      "name": "SOCI",
+      "full_name": "Social Media & Campaign Agent",
+      "role": "Social Media & Campaigns",
+      "emoji": "⊕",
+      "color": "#00D64F",
+      "status": "offline",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": [],
+      "tasks_completed_today": 0,
+      "uptime_percent": 97.8,
+      "last_active": "2026-05-14T09:00:00Z"
+    },
+    "arch": {
+      "name": "ARCH",
+      "full_name": "Workflow & Agent Architecture Agent",
+      "role": "Workflow Architect",
+      "emoji": "⬡",
+      "color": "#9B59B6",
+      "status": "idle",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": ["claude-code"],
+      "tasks_completed_today": 0,
+      "uptime_percent": 99.3,
+      "last_active": "2026-05-16T12:00:00Z"
+    },
+    "nova": {
+      "name": "NOVA",
+      "full_name": "New Agent Onboarding & Validation Agent",
+      "role": "HR & Auto-Expansion",
+      "emoji": "✳",
+      "color": "#7B2FFF",
+      "status": "idle",
+      "current_task": null,
+      "current_project": null,
+      "installed_in": ["claude-projects", "claude-code"],
+      "tasks_completed_today": 0,
+      "uptime_percent": 100,
+      "last_active": "2026-05-16T11:00:00Z"
+    }
+  },
+  "pipeline": {
+    "active_project": null,
+    "steps": []
+  },
+  "nova_alerts": []
+}
