@@ -3,789 +3,633 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agent Ops — agents.garvityagnik.in</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<title>AGENT OPS — agents.garvityagnik.in</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg0: #080808;
-    --bg1: #0c0c0c;
-    --bg2: #111111;
-    --border: #161616;
-    --border2: #1e1e1e;
-    --text1: #d4d4d4;
-    --text2: #666;
-    --text3: #333;
-    --text4: #222;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --neon:#00FFD1;
+  --red:#FF2D55;
+  --amber:#FFB800;
+  --purple:#BF5FFF;
+  --blue:#00A8FF;
+  --bg:#03040A;
+  --bg2:#070910;
+  --grid:#0D1020;
+}
 
-  body {
-    font-family: 'DM Mono', monospace;
-    background: var(--bg0);
-    color: var(--text1);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:#fff;font-family:'JetBrains Mono',monospace;cursor:none}
 
-  /* ── TOPBAR ───────────────────────────────────── */
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 13px 28px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg0);
-    position: sticky; top: 0; z-index: 200;
-  }
-  .topbar-left  { display: flex; align-items: center; gap: 16px; }
-  .logo         { font-size: 12px; letter-spacing: 0.22em; color: #444; text-transform: uppercase; }
-  .logo b       { color: #FF4D00; font-weight: 500; }
-  .subdomain    { font-size: 9px; color: var(--text3); letter-spacing: 0.12em; padding: 2px 8px; border: 1px solid var(--border2); border-radius: 2px; }
-  .live-pill    { display: flex; align-items: center; gap: 5px; font-size: 9px; letter-spacing: 0.15em; color: #444; }
-  .live-dot     { width: 5px; height: 5px; border-radius: 50%; background: #00D64F; animation: pulse 2s infinite; }
-  .live-dot.err { background: #ff4444; animation: none; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.2} }
-  .topbar-right { display: flex; align-items: center; gap: 16px; }
-  .clock        { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
-  .refresh-info { font-size: 9px; color: var(--text4); letter-spacing: 0.08em; }
+/* CUSTOM CURSOR */
+#cursor{position:fixed;width:20px;height:20px;border:1px solid var(--neon);border-radius:50%;pointer-events:none;z-index:9999;transition:transform 0.1s;mix-blend-mode:difference}
+#cursor-dot{position:fixed;width:4px;height:4px;background:var(--neon);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
 
-  /* ── LAYOUT ───────────────────────────────────── */
-  .layout {
-    display: grid;
-    grid-template-columns: 252px 1fr 256px;
-    min-height: calc(100vh - 48px);
-  }
+/* SCAN LINE OVERLAY */
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,209,0.015) 2px,rgba(0,255,209,0.015) 4px);pointer-events:none;z-index:1000}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.8) 100%);pointer-events:none;z-index:999}
 
-  /* ── SIDEBAR ──────────────────────────────────── */
-  .sidebar {
-    border-right: 1px solid var(--border);
-    background: #050505;
-    padding: 18px 0;
-    overflow-y: auto;
-  }
-  .sidebar-sec {
-    font-size: 8px;
-    letter-spacing: 0.25em;
-    color: var(--text4);
-    padding: 0 16px;
-    margin-bottom: 10px;
-    margin-top: 20px;
-    text-transform: uppercase;
-  }
-  .sidebar-sec:first-child { margin-top: 0; }
+/* CANVAS BG */
+#bg-canvas{position:fixed;inset:0;z-index:0}
 
-  .agent-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 16px;
-    cursor: pointer;
-    border-left: 2px solid transparent;
-    transition: all 0.12s;
-    position: relative;
-  }
-  .agent-row:hover        { background: #0a0a0a; }
-  .agent-row.sel          { background: #0e0e0e; border-left-color: var(--ac); }
-  .agent-row.is-busy      { border-left-color: var(--ac); }
-  .agent-row.is-offline   { opacity: 0.4; }
+/* MAIN LAYOUT */
+.shell{position:fixed;inset:0;z-index:10;display:grid;grid-template-rows:64px 1fr;overflow:hidden}
 
-  .av {
-    width: 30px; height: 30px; border-radius: 3px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px;
-    border: 1px solid var(--ac);
-    background: color-mix(in srgb, var(--ac) 8%, transparent);
-    color: var(--ac);
-    flex-shrink: 0;
-    position: relative;
-  }
-  .sdot {
-    position: absolute; bottom: -2px; right: -2px;
-    width: 7px; height: 7px; border-radius: 50%;
-    border: 1.5px solid #050505;
-  }
-  .s-active  { background: #00D64F; animation: pulse 2s infinite; }
-  .s-busy    { background: #FF9500; animation: pulse 1s infinite; }
-  .s-waiting { background: #7B2FFF; animation: pulse 1.5s infinite; }
-  .s-idle    { background: #2a2a2a; }
-  .s-offline { background: #1a1a1a; }
+/* ── TOPBAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid rgba(0,255,209,0.1);background:rgba(3,4,10,0.9);backdrop-filter:blur(20px);position:relative;overflow:hidden}
+.topbar::before{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon),transparent);animation:scanH 4s linear infinite}
+@keyframes scanH{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 
-  .ai { flex: 1; min-width: 0; }
-  .an { font-size: 11px; color: #bbb; letter-spacing: 0.04em; }
-  .ar { font-size: 8px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.logo-block{display:flex;align-items:baseline;gap:12px}
+.logo-main{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;color:var(--neon);letter-spacing:0.1em;text-shadow:0 0 20px rgba(0,255,209,0.5)}
+.logo-sub{font-size:9px;color:rgba(0,255,209,0.4);letter-spacing:0.3em}
+.domain-tag{font-size:9px;color:rgba(255,255,255,0.2);letter-spacing:0.15em;border:1px solid rgba(255,255,255,0.06);padding:3px 10px;border-radius:2px}
 
-  .tc {
-    font-size: 8px; padding: 1px 5px; border-radius: 2px;
-    background: var(--bg2); color: var(--text3);
-    flex-shrink: 0;
-  }
-  .tc.busy { background: color-mix(in srgb, var(--ac) 12%, transparent); color: var(--ac); }
+.topbar-center{display:flex;align-items:center;gap:24px}
+.sys-metric{text-align:center}
+.sm-val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--neon);line-height:1}
+.sm-lbl{font-size:7px;letter-spacing:0.2em;color:rgba(255,255,255,0.2);margin-top:2px}
 
-  /* ── MAIN ─────────────────────────────────────── */
-  .main { padding: 22px 26px; overflow-y: auto; }
+.topbar-right{display:flex;align-items:center;gap:16px}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:0.2em;color:var(--neon);border:1px solid rgba(0,255,209,0.2);padding:4px 10px;border-radius:2px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--neon);animation:livepulse 1.5s infinite;box-shadow:0 0 8px var(--neon)}
+.live-dot.err{background:var(--red);box-shadow:0 0 8px var(--red);animation:none}
+@keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
+.clock-display{font-family:'Orbitron',sans-serif;font-size:13px;color:rgba(255,255,255,0.3);letter-spacing:0.1em}
 
-  .stat-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 22px;
-  }
-  .stat-card {
-    background: var(--bg1);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 13px 15px;
-  }
-  .sl { font-size: 8px; letter-spacing: 0.18em; color: var(--text4); margin-bottom: 7px; text-transform: uppercase; }
-  .sv { font-size: 24px; color: var(--text1); letter-spacing: -0.02em; line-height: 1; }
-  .ss { font-size: 8px; color: var(--text3); margin-top: 3px; }
+/* ── BODY ── */
+.body{display:grid;grid-template-columns:280px 1fr 300px;height:100%;overflow:hidden}
 
-  .section-hd {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 13px;
-  }
-  .sh-label { font-size: 8px; letter-spacing: 0.2em; color: var(--text4); text-transform: uppercase; }
-  .sh-sub   { font-size: 8px; color: var(--text4); letter-spacing: 0.08em; }
+/* ── LEFT PANEL ── */
+.left-panel{border-right:1px solid rgba(0,255,209,0.06);background:rgba(3,4,10,0.95);overflow-y:auto;padding:16px 0}
+.left-panel::-webkit-scrollbar{width:2px}
+.left-panel::-webkit-scrollbar-thumb{background:rgba(0,255,209,0.2)}
 
-  /* pipeline */
-  .pipeline-box {
-    background: var(--bg1); border: 1px solid var(--border);
-    border-radius: 3px; padding: 16px; margin-bottom: 22px;
-  }
-  .pip-empty { font-size: 11px; color: var(--text3); font-style: italic; text-align: center; padding: 20px 0; }
-  .pip-track {
-    display: flex; align-items: center;
-    overflow-x: auto; padding-bottom: 2px; gap: 0;
-  }
-  .pip-track::-webkit-scrollbar { height: 2px; }
-  .pip-track::-webkit-scrollbar-thumb { background: var(--border2); }
-  .pip-node { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 62px; }
-  .pip-circle {
-    width: 34px; height: 34px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; border: 1px solid;
-    position: relative; transition: all 0.2s;
-  }
-  .pip-circle.pip-done    { background: color-mix(in srgb, var(--ac) 22%, transparent); border-color: var(--ac); color: var(--ac); }
-  .pip-circle.pip-current { background: color-mix(in srgb, var(--ac) 14%, transparent); border-color: var(--ac); color: var(--ac); box-shadow: 0 0 10px color-mix(in srgb, var(--ac) 35%, transparent); }
-  .pip-circle.pip-pending { background: transparent; border-color: #1e1e1e; color: #2a2a2a; }
-  .pip-circle.pip-current::after {
-    content: ''; position: absolute; inset: -5px; border-radius: 50%;
-    border: 1px solid var(--ac); animation: ringpulse 2s infinite;
-  }
-  @keyframes ringpulse { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(1.6);opacity:0} }
-  .pip-lbl { font-size: 8px; text-align: center; letter-spacing: 0.04em; }
-  .pip-st  { font-size: 7px; text-align: center; }
-  .pip-arrow { flex: 1; min-width: 16px; height: 1px; background: var(--border2); margin-bottom: 22px; position: relative; }
-  .pip-arrow::after { content: ''; position: absolute; right: 0; top: -3px; border-left: 4px solid var(--border2); border-top: 3px solid transparent; border-bottom: 3px solid transparent; }
-  .pip-arrow.done-arrow { background: #FF4D00; }
-  .pip-arrow.done-arrow::after { border-left-color: #FF4D00; }
+.panel-label{font-size:7px;letter-spacing:0.35em;color:rgba(0,255,209,0.3);padding:0 20px;margin-bottom:16px;text-transform:uppercase}
 
-  /* task cards */
-  .tasks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 22px; }
-  .task-card {
-    background: var(--bg1); border: 1px solid var(--border);
-    border-left: 2px solid var(--ac);
-    border-radius: 3px; padding: 13px;
-    cursor: pointer; transition: background 0.12s;
-  }
-  .task-card:hover { background: #0f0f0f; }
-  .tc-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-  .tc-ag { font-size: 8px; color: var(--ac); letter-spacing: 0.1em; }
-  .tc-badge { font-size: 7px; padding: 2px 6px; border-radius: 2px; letter-spacing: 0.08em; text-transform: uppercase; }
-  .b-busy    { background: #FF950018; color: #FF9500; }
-  .b-waiting { background: #7B2FFF18; color: #7B2FFF; }
-  .b-done    { background: #00D64F18; color: #00D64F; }
-  .b-queued  { background: #33333318; color: #555; }
-  .tc-title { font-size: 10px; color: #aaa; margin-bottom: 7px; line-height: 1.5; }
-  .tc-bar   { height: 2px; background: #161616; border-radius: 1px; overflow: hidden; }
-  .tc-fill  { height: 100%; border-radius: 1px; transition: width 1.5s ease; }
-  .tc-meta  { display: flex; justify-content: space-between; margin-top: 5px; font-size: 8px; color: var(--text4); }
-  .no-tasks { font-size: 11px; color: var(--text3); font-style: italic; text-align: center; padding: 30px 0; grid-column: 1/-1; }
+.agent-tile{position:relative;padding:14px 20px;cursor:pointer;border-left:2px solid transparent;transition:all 0.2s;overflow:hidden;margin-bottom:1px}
+.agent-tile::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,255,209,0.03),transparent);opacity:0;transition:opacity 0.2s}
+.agent-tile:hover::before,.agent-tile.sel::before{opacity:1}
+.agent-tile.sel{border-left-color:var(--ac);background:rgba(0,255,209,0.02)}
+.agent-tile.offline{opacity:0.3}
 
-  /* feed */
-  .feed-box { background: var(--bg1); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
-  .feed-hd  { padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 8px; letter-spacing: 0.18em; color: var(--text4); }
-  .feed-body { max-height: 180px; overflow-y: auto; }
-  .feed-body::-webkit-scrollbar { width: 2px; }
-  .feed-body::-webkit-scrollbar-thumb { background: var(--border2); }
-  .feed-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 14px; border-bottom: 1px solid #0c0c0c; }
-  .fi-dot   { width: 4px; height: 4px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
-  .fi-txt   { font-size: 9px; color: #444; line-height: 1.55; flex: 1; }
-  .fi-txt b { color: #666; font-weight: 500; }
-  .fi-time  { font-size: 8px; color: var(--text4); white-space: nowrap; padding-top: 2px; flex-shrink: 0; }
-  .feed-empty { font-size: 10px; color: var(--text4); font-style: italic; text-align: center; padding: 20px; }
+.tile-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.tile-icon{width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;position:relative;border:1px solid var(--ac);background:color-mix(in srgb,var(--ac) 8%,transparent);color:var(--ac);flex-shrink:0;transition:all 0.2s}
+.agent-tile:hover .tile-icon,.agent-tile.sel .tile-icon{box-shadow:0 0 16px color-mix(in srgb,var(--ac) 30%,transparent)}
+.status-ring{position:absolute;inset:-3px;border-radius:6px;border:1px solid var(--sc);animation:ringpulse 2s infinite;opacity:0}
+.agent-tile.online .status-ring{opacity:1}
+@keyframes ringpulse{0%,100%{opacity:0.6;transform:scale(1)}50%{opacity:0;transform:scale(1.1)}}
 
-  /* ── RIGHT PANEL ──────────────────────────────── */
-  .rpanel {
-    border-left: 1px solid var(--border);
-    background: #050505;
-    padding: 18px;
-    overflow-y: auto;
-  }
-  .rp-title { font-size: 8px; letter-spacing: 0.2em; color: var(--text4); margin-bottom: 14px; text-transform: uppercase; }
+.tile-info{flex:1;min-width:0}
+.tile-name{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.05em;color:rgba(255,255,255,0.9)}
+.tile-role{font-size:8px;color:rgba(255,255,255,0.2);letter-spacing:0.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.tile-status-badge{font-size:7px;letter-spacing:0.12em;padding:2px 7px;border-radius:2px;border:1px solid;text-transform:uppercase;flex-shrink:0}
 
-  /* nova alert */
-  .nova-alert {
-    background: #0a0714;
-    border: 1px solid #7B2FFF28;
-    border-radius: 3px; padding: 12px;
-    margin-bottom: 14px;
-    animation: novaPulse 3s infinite;
-  }
-  @keyframes novaPulse { 0%,100%{border-color:#7B2FFF28} 50%{border-color:#7B2FFF60} }
-  .nova-tag  { font-size: 8px; color: #7B2FFF; letter-spacing: 0.1em; margin-bottom: 5px; }
-  .nova-body { font-size: 10px; color: #555; line-height: 1.6; margin-bottom: 8px; }
-  .nova-actions { display: flex; gap: 6px; }
-  .nova-btn {
-    background: #7B2FFF18; border: 1px solid #7B2FFF35;
-    color: #7B2FFF; font-size: 8px; letter-spacing: 0.1em;
-    padding: 4px 10px; border-radius: 2px;
-    cursor: pointer; font-family: inherit;
-    transition: background 0.12s;
-  }
-  .nova-btn:hover { background: #7B2FFF30; }
-  .nova-btn.skip  { background: transparent; color: var(--text3); border-color: var(--border2); }
+.tile-bar{height:1px;background:rgba(255,255,255,0.03);position:relative;overflow:hidden;margin-top:8px}
+.tile-bar-fill{position:absolute;left:0;top:0;height:100%;background:var(--ac);transition:width 1s ease;box-shadow:2px 0 8px var(--ac)}
 
-  /* agent detail */
-  .agent-detail-card {
-    background: var(--bg1); border: 1px solid var(--border);
-    border-radius: 3px; padding: 14px; margin-bottom: 12px;
-  }
-  .ad-name  { font-size: 18px; letter-spacing: 0.04em; margin-bottom: 2px; }
-  .ad-role  { font-size: 8px; color: var(--text4); margin-bottom: 13px; }
-  .ad-row   { display: flex; justify-content: space-between; margin-bottom: 5px; }
-  .ad-k     { font-size: 8px; color: var(--text4); letter-spacing: 0.1em; }
-  .ad-v     { font-size: 8px; color: #555; }
+.funny-msg{font-size:8px;color:rgba(255,255,255,0.15);font-style:italic;margin-top:4px;line-height:1.4}
 
-  /* installed-in chips */
-  .installed-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-  .inst-chip {
-    font-size: 8px; padding: 2px 7px; border-radius: 2px;
-    border: 1px solid var(--border2); color: var(--text3);
-    letter-spacing: 0.06em;
-  }
-  .inst-chip.active { border-color: var(--ac); color: var(--ac); background: color-mix(in srgb, var(--ac) 8%, transparent); }
+/* ── MAIN PANEL ── */
+.main-panel{overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:18px}
+.main-panel::-webkit-scrollbar{width:2px}
+.main-panel::-webkit-scrollbar-thumb{background:rgba(0,255,209,0.15)}
 
-  /* funny status box */
-  .funny-box {
-    background: #0a0a0a; border: 1px solid #1a1a1a;
-    border-radius: 3px; padding: 10px 12px;
-    margin-top: 10px; font-size: 10px; color: #3a3a3a;
-    font-style: italic; line-height: 1.6;
-    display: none;
-  }
+/* STAT CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat-card{background:var(--bg2);border:1px solid rgba(0,255,209,0.06);border-radius:4px;padding:16px;position:relative;overflow:hidden;cursor:default}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon),transparent);opacity:0.3}
+.sc-val{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;color:var(--neon);text-shadow:0 0 30px rgba(0,255,209,0.3);letter-spacing:0.02em}
+.sc-lbl{font-size:7px;letter-spacing:0.25em;color:rgba(255,255,255,0.2);margin-top:4px;text-transform:uppercase}
+.sc-sub{font-size:8px;color:rgba(255,255,255,0.1);margin-top:2px}
+.sc-corner{position:absolute;bottom:8px;right:10px;font-family:'Orbitron',sans-serif;font-size:7px;color:rgba(255,255,255,0.05);letter-spacing:0.2em}
 
-  /* progress in detail */
-  .detail-prog-bar  { height: 2px; background: #111; border-radius: 1px; overflow: hidden; margin: 3px 0 2px; }
-  .detail-prog-fill { height: 100%; border-radius: 1px; }
+/* PIPELINE */
+.pipeline-section{background:var(--bg2);border:1px solid rgba(0,255,209,0.06);border-radius:4px;padding:18px;position:relative;overflow:hidden}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.section-title{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.2em;color:rgba(255,255,255,0.4)}
+.section-meta{font-size:8px;color:rgba(0,255,209,0.4);letter-spacing:0.1em}
 
-  /* queued */
-  .q-item {
-    display: flex; gap: 8px; align-items: flex-start;
-    padding: 7px 10px; background: var(--bg1);
-    border: 1px solid var(--border); border-radius: 3px;
-    margin-bottom: 5px; font-size: 9px; color: #444;
-  }
-  .q-num { font-size: 8px; color: var(--text4); flex-shrink: 0; padding-top: 1px; }
+.pip-empty{text-align:center;padding:24px 0;font-size:11px;color:rgba(255,255,255,0.1);font-style:italic;letter-spacing:0.1em}
 
-  /* error banner */
-  .err-banner {
-    background: #1a0a0a; border-bottom: 1px solid #ff444420;
-    padding: 8px 28px; font-size: 9px; color: #ff6666;
-    display: none; letter-spacing: 0.08em;
-  }
+.pip-track{display:flex;align-items:center;overflow-x:auto;padding-bottom:4px;gap:0}
+.pip-track::-webkit-scrollbar{height:2px}
+.pip-track::-webkit-scrollbar-thumb{background:rgba(0,255,209,0.2)}
+
+.pip-node{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:70px}
+.pip-hex{width:40px;height:40px;position:relative;display:flex;align-items:center;justify-content:center;font-size:13px}
+.pip-hex::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--ac) 10%,transparent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);transition:all 0.3s}
+.pip-hex.done::before{background:color-mix(in srgb,var(--ac) 25%,transparent)}
+.pip-hex.current::before{background:color-mix(in srgb,var(--ac) 15%,transparent);animation:hexglow 2s infinite}
+.pip-hex.pending::before{background:rgba(255,255,255,0.02)}
+@keyframes hexglow{0%,100%{filter:drop-shadow(0 0 6px var(--ac))}50%{filter:drop-shadow(0 0 14px var(--ac))}}
+.pip-hex-icon{position:relative;z-index:1;color:var(--ac)}
+.pip-hex.pending .pip-hex-icon{color:rgba(255,255,255,0.1)}
+.pip-lbl{font-size:8px;letter-spacing:0.05em;color:rgba(255,255,255,0.3);text-align:center}
+.pip-lbl.active{color:var(--ac)}
+.pip-st{font-size:7px;text-align:center;letter-spacing:0.08em}
+
+.pip-connector{flex:1;min-width:20px;height:1px;position:relative;margin-bottom:22px}
+.pip-connector::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.05)}
+.pip-connector.done-con::before{background:var(--neon);box-shadow:0 0 6px rgba(0,255,209,0.4)}
+.pip-connector::after{content:'▶';position:absolute;right:-4px;top:-5px;font-size:8px;color:rgba(255,255,255,0.1)}
+.pip-connector.done-con::after{color:var(--neon)}
+
+/* TASK BOARD */
+.tasks-section{}
+.tasks-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.task-card{background:var(--bg2);border:1px solid rgba(255,255,255,0.04);border-radius:4px;padding:14px;border-left:2px solid var(--ac);position:relative;overflow:hidden;cursor:pointer;transition:all 0.2s}
+.task-card:hover{border-color:rgba(255,255,255,0.08);background:rgba(255,255,255,0.02)}
+.task-card::before{content:'';position:absolute;top:0;left:0;right:0;height:100%;background:linear-gradient(135deg,color-mix(in srgb,var(--ac) 3%,transparent),transparent);pointer-events:none}
+.tc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tc-agent{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;color:var(--ac);letter-spacing:0.08em}
+.tc-badge{font-size:7px;padding:2px 7px;border-radius:2px;border:1px solid;letter-spacing:0.1em;text-transform:uppercase}
+.b-busy{color:#FFB800;border-color:rgba(255,184,0,0.3);background:rgba(255,184,0,0.05)}
+.b-waiting{color:var(--purple);border-color:rgba(191,95,255,0.3);background:rgba(191,95,255,0.05)}
+.b-queued{color:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.08)}
+.tc-title{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:8px}
+.tc-prog-track{height:1px;background:rgba(255,255,255,0.05);position:relative;overflow:visible}
+.tc-prog-fill{position:absolute;left:0;top:0;height:100%;transition:width 2s ease;box-shadow:2px 0 8px var(--ac)}
+.tc-prog-dot{position:absolute;right:-2px;top:-2px;width:5px;height:5px;border-radius:50%;background:var(--ac);box-shadow:0 0 6px var(--ac)}
+.tc-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:8px;color:rgba(255,255,255,0.15)}
+.no-tasks{grid-column:1/-1;text-align:center;padding:40px;font-size:11px;color:rgba(255,255,255,0.08);font-style:italic;letter-spacing:0.15em;border:1px dashed rgba(255,255,255,0.04);border-radius:4px}
+
+/* FEED */
+.feed-section{background:var(--bg2);border:1px solid rgba(0,255,209,0.06);border-radius:4px;overflow:hidden}
+.feed-head{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:8px;letter-spacing:0.25em;color:rgba(255,255,255,0.2)}
+.feed-head-dot{width:4px;height:4px;border-radius:50%;background:var(--neon);animation:livepulse 2s infinite}
+.feed-scroll{max-height:160px;overflow-y:auto}
+.feed-scroll::-webkit-scrollbar{width:2px}
+.feed-scroll::-webkit-scrollbar-thumb{background:rgba(0,255,209,0.1)}
+.feed-row{display:flex;align-items:flex-start;gap:10px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.02);animation:feedin 0.4s ease}
+@keyframes feedin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.fr-dot{width:4px;height:4px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.fr-txt{font-size:9px;color:rgba(255,255,255,0.25);line-height:1.6;flex:1}
+.fr-txt b{font-weight:400}
+.fr-time{font-size:8px;color:rgba(255,255,255,0.1);white-space:nowrap;flex-shrink:0;padding-top:2px;font-variant-numeric:tabular-nums}
+.feed-empty{padding:20px;text-align:center;font-size:9px;color:rgba(255,255,255,0.08);font-style:italic}
+
+/* ── RIGHT PANEL ── */
+.right-panel{border-left:1px solid rgba(0,255,209,0.06);background:rgba(3,4,10,0.95);overflow-y:auto;padding:18px}
+.right-panel::-webkit-scrollbar{width:2px}
+.right-panel::-webkit-scrollbar-thumb{background:rgba(0,255,209,0.2)}
+
+.rp-label{font-size:7px;letter-spacing:0.35em;color:rgba(0,255,209,0.3);margin-bottom:14px;text-transform:uppercase}
+
+/* NOVA ALERT */
+.nova-alert{background:rgba(191,95,255,0.04);border:1px solid rgba(191,95,255,0.2);border-radius:4px;padding:14px;margin-bottom:16px;position:relative;overflow:hidden;animation:novapulse 3s infinite}
+.nova-alert::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--purple),transparent);animation:scanH 3s linear infinite}
+@keyframes novapulse{0%,100%{border-color:rgba(191,95,255,0.2)}50%{border-color:rgba(191,95,255,0.5)}}
+.nova-eyebrow{font-size:7px;letter-spacing:0.25em;color:var(--purple);margin-bottom:6px}
+.nova-body{font-size:9px;color:rgba(255,255,255,0.3);line-height:1.7;margin-bottom:10px}
+.nova-btns{display:flex;gap:6px}
+.nova-btn{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;padding:5px 12px;border-radius:2px;cursor:pointer;border:1px solid;transition:all 0.15s;text-transform:uppercase}
+.nb-onboard{background:rgba(191,95,255,0.1);border-color:rgba(191,95,255,0.4);color:var(--purple)}
+.nb-onboard:hover{background:rgba(191,95,255,0.2)}
+.nb-skip{background:transparent;border-color:rgba(255,255,255,0.06);color:rgba(255,255,255,0.2)}
+
+/* AGENT DETAIL */
+.detail-card{background:var(--bg2);border:1px solid rgba(0,255,209,0.06);border-radius:4px;padding:16px;margin-bottom:14px;position:relative;overflow:hidden}
+.detail-card::after{content:'';position:absolute;top:0;left:0;bottom:0;width:1px;background:var(--ac);opacity:0.4}
+.dc-name{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:0.05em;line-height:1;color:var(--ac);text-shadow:0 0 20px color-mix(in srgb,var(--ac) 30%,transparent)}
+.dc-role{font-size:8px;letter-spacing:0.15em;color:rgba(255,255,255,0.2);margin-bottom:14px;margin-top:2px}
+.dc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.dc-k{font-size:7px;letter-spacing:0.2em;color:rgba(255,255,255,0.15);text-transform:uppercase}
+.dc-v{font-size:9px;color:rgba(255,255,255,0.4);text-align:right}
+
+/* INSTALLED CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.03)}
+.chip{font-size:7px;letter-spacing:0.1em;padding:3px 8px;border-radius:2px;border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.15);text-transform:uppercase}
+.chip.on{border-color:color-mix(in srgb,var(--ac) 40%,transparent);color:var(--ac);background:color-mix(in srgb,var(--ac) 6%,transparent)}
+
+/* FUNNY STATUS */
+.funny-detail{margin-top:10px;padding:10px;background:rgba(255,255,255,0.02);border-radius:3px;border:1px dashed rgba(255,255,255,0.05);font-size:9px;color:rgba(255,255,255,0.15);font-style:italic;line-height:1.6}
+
+/* QUICK UPDATE */
+.qupdate{margin-top:14px}
+.qu-label{font-size:7px;letter-spacing:0.25em;color:rgba(255,255,255,0.15);margin-bottom:8px;text-transform:uppercase}
+.qu-btns{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.qu-btn{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;padding:7px 10px;border-radius:2px;cursor:pointer;border:1px solid rgba(255,255,255,0.06);background:transparent;color:rgba(255,255,255,0.2);transition:all 0.15s;text-transform:uppercase;text-align:left}
+.qu-btn:hover{border-color:var(--neon);color:var(--neon);background:rgba(0,255,209,0.04)}
+.qu-btn.current-s{border-color:var(--ac);color:var(--ac);background:color-mix(in srgb,var(--ac) 6%,transparent)}
+
+/* DETAIL PROGRESS */
+.dp-prog{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.03)}
+.dp-task{font-size:9px;color:rgba(255,255,255,0.25);margin-bottom:6px;line-height:1.5}
+.dp-bar{height:1px;background:rgba(255,255,255,0.05);position:relative}
+.dp-fill{position:absolute;left:0;top:0;height:100%;background:var(--ac);box-shadow:0 0 8px var(--ac);transition:width 1s}
+.dp-pct{font-size:7px;color:rgba(255,255,255,0.15);text-align:right;margin-top:3px}
+
+/* ERR BANNER */
+.err-banner{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(255,45,85,0.1);border-bottom:1px solid rgba(255,45,85,0.3);padding:6px 28px;font-size:9px;color:var(--red);letter-spacing:0.08em;display:none}
+
+/* GLITCH on logo */
+.logo-main{animation:glitch 8s infinite}
+@keyframes glitch{0%,95%,100%{text-shadow:0 0 20px rgba(0,255,209,0.5)}96%{text-shadow:-2px 0 var(--red),2px 0 var(--blue),0 0 20px rgba(0,255,209,0.5)}97%{text-shadow:2px 0 var(--red),-2px 0 var(--blue),0 0 20px rgba(0,255,209,0.5)}98%{text-shadow:0 0 20px rgba(0,255,209,0.5)}}
 </style>
 </head>
 <body>
 
-<div class="err-banner" id="err-banner">
-  ⚠ Could not reach status API — showing last cached data. Check Vercel logs.
-</div>
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="err-banner" id="err-banner">⚠ STATUS API UNREACHABLE — CACHED DATA</div>
 
-<div class="topbar">
-  <div class="topbar-left">
-    <div class="logo">CREATIVE OPS <b>SYSTEM</b></div>
-    <div class="subdomain">agents.garvityagnik.in</div>
-    <div class="live-pill">
-      <div class="live-dot" id="live-dot"></div>
-      <span id="conn-label">CONNECTING...</span>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo-block">
+      <div class="logo-main">AGENT OPS</div>
+      <div class="logo-sub">CREATIVE SYSTEM v1.0</div>
     </div>
-  </div>
-  <div class="topbar-right">
-    <div class="refresh-info" id="refresh-info">—</div>
-    <div class="clock" id="clock">--:--:--</div>
-  </div>
-</div>
+    <div class="domain-tag">agents.garvityagnik.in</div>
 
-<div class="layout">
-
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-sec">Agent Roster</div>
-    <div id="agent-list"></div>
-  </div>
-
-  <!-- MAIN -->
-  <div class="main">
-
-    <div class="stat-row">
-      <div class="stat-card">
-        <div class="sl">Online Agents</div>
-        <div class="sv" id="s-online">—</div>
-        <div class="ss">of 9 total</div>
-      </div>
-      <div class="stat-card">
-        <div class="sl">Busy Now</div>
-        <div class="sv" id="s-busy">—</div>
-        <div class="ss">working hard</div>
-      </div>
-      <div class="stat-card">
-        <div class="sl">Waiting Approval</div>
-        <div class="sv" id="s-waiting">—</div>
-        <div class="ss">need your call</div>
-      </div>
-      <div class="stat-card">
-        <div class="sl">Done Today</div>
-        <div class="sv" id="s-done">—</div>
-        <div class="ss">tasks complete</div>
-      </div>
+    <div class="topbar-center">
+      <div class="sys-metric"><div class="sm-val" id="s-online">—</div><div class="sm-lbl">online</div></div>
+      <div style="width:1px;height:24px;background:rgba(255,255,255,0.05)"></div>
+      <div class="sys-metric"><div class="sm-val" id="s-busy" style="color:#FFB800">—</div><div class="sm-lbl">working</div></div>
+      <div style="width:1px;height:24px;background:rgba(255,255,255,0.05)"></div>
+      <div class="sys-metric"><div class="sm-val" id="s-waiting" style="color:var(--purple)">—</div><div class="sm-lbl">waiting</div></div>
+      <div style="width:1px;height:24px;background:rgba(255,255,255,0.05)"></div>
+      <div class="sys-metric"><div class="sm-val" id="s-done" style="color:var(--blue)">—</div><div class="sm-lbl">done today</div></div>
     </div>
 
-    <div class="pipeline-box">
-      <div class="section-hd">
-        <div class="sh-label" id="pip-project-label">No active pipeline</div>
-        <div class="sh-sub" id="pip-step-label"></div>
+    <div class="topbar-right">
+      <div class="live-badge">
+        <div class="live-dot" id="live-dot"></div>
+        <span id="conn-lbl">CONNECTING</span>
       </div>
-      <div id="pipeline-wrap"></div>
-    </div>
-
-    <div class="section-hd">
-      <div class="sh-label">Live Task Board</div>
-      <div class="sh-sub" id="last-updated">—</div>
-    </div>
-    <div class="tasks-grid" id="tasks-grid"></div>
-
-    <div class="feed-box">
-      <div class="feed-hd">ACTIVITY FEED</div>
-      <div class="feed-body" id="feed-body"></div>
-    </div>
-
-  </div>
-
-  <!-- RIGHT PANEL -->
-  <div class="rpanel">
-    <div class="rp-title">Agent Detail</div>
-    <div id="nova-zone"></div>
-    <div id="detail-zone"></div>
-    <div style="margin-top:16px;">
-      <div class="rp-title">Queued</div>
-      <div id="queue-zone"></div>
+      <div class="clock-display" id="clock">--:--:--</div>
     </div>
   </div>
 
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- LEFT -->
+    <div class="left-panel">
+      <div class="panel-label">Agent Roster</div>
+      <div id="agent-list"></div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-panel">
+
+      <!-- PIPELINE -->
+      <div class="pipeline-section">
+        <div class="section-head">
+          <div class="section-title" id="pip-title">NO ACTIVE PIPELINE</div>
+          <div class="section-meta" id="pip-step"></div>
+        </div>
+        <div id="pip-wrap"></div>
+      </div>
+
+      <!-- TASKS -->
+      <div class="tasks-section">
+        <div class="section-head" style="margin-bottom:12px">
+          <div class="section-title">LIVE TASK BOARD</div>
+          <div class="section-meta" id="last-upd">—</div>
+        </div>
+        <div class="tasks-grid" id="tasks-grid"></div>
+      </div>
+
+      <!-- FEED -->
+      <div class="feed-section">
+        <div class="feed-head">
+          <div class="feed-head-dot"></div>
+          ACTIVITY STREAM
+        </div>
+        <div class="feed-scroll" id="feed-scroll"></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-panel">
+      <div class="rp-label">Control</div>
+      <div id="nova-zone"></div>
+      <div id="detail-zone"></div>
+    </div>
+
+  </div>
 </div>
 
 <script>
-// ─────────────────────────────────────────────────────────────
-//  CONFIG
-// ─────────────────────────────────────────────────────────────
-const API_URL      = '/api/status';
-const POLL_MS      = 30000; // 30 seconds
-const SECRET       = localStorage.getItem('dashboard_secret') || '';
+// ── CURSOR ──────────────────────────────────────────────────
+const cur = document.getElementById('cursor');
+const curDot = document.getElementById('cursor-dot');
+let mx=0,my=0,cx=0,cy=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  curDot.style.left=mx+'px'; curDot.style.top=my+'px';
+});
+(function animCursor(){
+  cx+=(mx-cx)*0.15; cy+=(my-cy)*0.15;
+  cur.style.left=(cx-10)+'px'; cur.style.top=(cy-10)+'px';
+  requestAnimationFrame(animCursor);
+})();
 
-// Funny idle messages per agent
-const FUNNY = {
-  aria: ["Waiting for orders, boss.", "Refreshing inbox for the 47th time.", "Reorganising the pipeline in my head.", "Playing 4D chess with task queues."],
-  desi: ["Adjusting kerning by 0.1px... again.", "Staring at the Pantone book.", "Playing pool in the break room. 🎱", "Debating serif vs sans-serif internally."],
-  idea: ["Daydreaming about gradients.", "Sketching on napkins (digitally).", "Listening to lo-fi and 'ideating'.", "Having an existential crisis about Comic Sans."],
-  mova: ["Watching After Effects render... forever.", "Playing a 15-second loop. On repeat. 🎬", "Calculating frame rates for fun.", "Easing functions. Just easing functions."],
-  bryn: ["Reading a 47-page brand guidelines doc. For fun.", "Rewriting the brief nobody asked for.", "Strategically sipping chai. ☕", "In the zone. Do not disturb."],
-  copy: ["Thesaurus open, vibes immaculate.", "Finding the perfect em dash. —", "Writing headlines nobody will use.", "Speedrunning 'just one more draft'. ✍️"],
-  soci: ["Scrolling for 'research'. Sure. 📱", "Hashtagging hashtags with hashtags.", "Calculating optimal post time. Again.", "Waiting for the algorithm to make sense."],
-  arch: ["Building workflows nobody asked for.", "Diagramming the diagram diagram. 🗂️", "YAML goes brrr.", "Optimising the optimisation process."],
-  nova: ["Scouting for new talent. 🔍", "Reading CVs from imaginary agents.", "Playing HR simulator 2026.", "Gap detected: no Coffee Agent. Investigating."],
-};
+// ── PARTICLE BG ──────────────────────────────────────────────
+const cv=document.getElementById('bg-canvas');
+const ctx=cv.getContext('2d');
+cv.width=window.innerWidth; cv.height=window.innerHeight;
+window.addEventListener('resize',()=>{cv.width=window.innerWidth;cv.height=window.innerHeight});
 
-function randomFunny(id) {
-  const msgs = FUNNY[id] || ["Chilling."];
-  return msgs[Math.floor(Math.random() * msgs.length)];
+const NODES=55;
+const nodes=Array.from({length:NODES},()=>({
+  x:Math.random()*cv.width, y:Math.random()*cv.height,
+  vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.5)*0.3,
+  r:Math.random()*1.5+0.5, pulse:Math.random()*Math.PI*2
+}));
+
+function drawBG(t){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // grid
+  ctx.strokeStyle='rgba(0,255,209,0.015)';
+  ctx.lineWidth=1;
+  for(let x=0;x<cv.width;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height);ctx.stroke()}
+  for(let y=0;y<cv.height;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width,y);ctx.stroke()}
+  // connections
+  for(let i=0;i<NODES;i++){
+    for(let j=i+1;j<NODES;j++){
+      const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<140){
+        ctx.strokeStyle=`rgba(0,255,209,${0.06*(1-d/140)})`;
+        ctx.lineWidth=0.5;
+        ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.stroke();
+      }
+    }
+  }
+  // nodes
+  nodes.forEach((n,i)=>{
+    n.pulse+=0.02;
+    const a=0.3+0.2*Math.sin(n.pulse);
+    ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,255,209,${a})`;ctx.fill();
+    n.x+=n.vx; n.y+=n.vy;
+    if(n.x<0||n.x>cv.width)n.vx*=-1;
+    if(n.y<0||n.y>cv.height)n.vy*=-1;
+  });
 }
+(function loop(t){drawBG(t);requestAnimationFrame(loop)})();
 
-const PLATFORM_LABELS = {
-  'claude-projects': 'Claude Projects',
-  'claude-code':     'Claude Code',
-  'api':             'API',
-  'n8n':             'n8n',
-  'make':            'Make.com',
+// ── DATA ─────────────────────────────────────────────────────
+const API='/api/status';
+const POLL=30000;
+const FUNNY={
+  aria:["Waiting for orders, boss.","Refreshing the pipeline for the 88th time.","Playing 4D chess with task queues.","Orchestrating silence."],
+  desi:["Adjusting kerning by 0.1px… again.","Playing pool in the break room. 🎱","Debating serif vs sans internally.","Staring at the Pantone book."],
+  idea:["Daydreaming about gradients.","Having an existential crisis about Comic Sans.","Lo-fi beats + blank canvas = ideating.","Sketching on digital napkins."],
+  mova:["Watching AE render… forever. 🎬","Playing a 15s loop. On repeat.","Calculating frame rates for fun.","Easing functions. Just easing functions."],
+  bryn:["Reading a 47-page brief doc. For fun.","Strategically sipping chai. ☕","Rewriting the brief nobody asked for.","In the zone. Do not disturb."],
+  copy:["Thesaurus open, vibes immaculate.","Finding the perfect em dash — ","Writing headlines nobody will use. ✍️","Speedrunning 'just one more draft'."],
+  soci:["Scrolling for 'research'. Sure. 📱","Hashtagging hashtags with hashtags.","Waiting for the algorithm to make sense.","Calculating optimal post time. Again."],
+  arch:["Building workflows nobody asked for.","Diagramming the diagram diagram. 🗂️","YAML goes brrr.","Optimising the optimisation."],
+  nova:["Scouting for new talent. 🔍","Reading CVs from imaginary agents.","Gap detected: no Coffee Agent. Investigating.","Playing HR simulator 2026."],
 };
+const PLAT={'claude-projects':'Claude Projects','claude-code':'Claude Code','api':'API','n8n':'n8n','make':'Make.com'};
+const SC={active:'#00FFD1',busy:'#FFB800',waiting:'#BF5FFF',idle:'rgba(255,255,255,0.15)',offline:'rgba(255,255,255,0.06)'};
+const SL={active:'ACTIVE',busy:'BUSY',waiting:'WAITING',idle:'IDLE',offline:'OFFLINE'};
 
-// ─────────────────────────────────────────────────────────────
-//  STATE
-// ─────────────────────────────────────────────────────────────
-let state       = null;
-let selectedId  = 'aria';
-let feedLog     = [];
-let pollTimer   = null;
+let state=null, selId='aria', feedLog=[], secret=null;
 
-// ─────────────────────────────────────────────────────────────
-//  FETCH
-// ─────────────────────────────────────────────────────────────
-async function fetchStatus() {
-  try {
-    const res = await fetch(API_URL + '?t=' + Date.now());
-    if (!res.ok) throw new Error('non-200');
-    const data = await res.json();
-    document.getElementById('err-banner').style.display = 'none';
-    document.getElementById('live-dot').className = 'live-dot';
-    document.getElementById('conn-label').textContent = 'LIVE';
-    return data;
-  } catch (e) {
-    document.getElementById('err-banner').style.display = 'block';
-    document.getElementById('live-dot').className = 'live-dot err';
-    document.getElementById('conn-label').textContent = 'OFFLINE';
+function funny(id){const m=FUNNY[id]||['Chilling.'];return m[Math.floor(Math.random()*m.length)]}
+
+// ── FETCH ─────────────────────────────────────────────────────
+async function fetchStatus(){
+  try{
+    const r=await fetch(API+'?t='+Date.now());
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    document.getElementById('err-banner').style.display='none';
+    document.getElementById('live-dot').className='live-dot';
+    document.getElementById('conn-lbl').textContent='LIVE';
+    return d;
+  }catch(e){
+    document.getElementById('err-banner').style.display='block';
+    document.getElementById('live-dot').className='live-dot err';
+    document.getElementById('conn-lbl').textContent='OFFLINE';
     return null;
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  RENDER HELPERS
-// ─────────────────────────────────────────────────────────────
-function dotClass(status) {
-  return { active:'s-active', busy:'s-busy', waiting:'s-waiting', idle:'s-idle', offline:'s-offline' }[status] || 's-idle';
+// ── RENDER SIDEBAR ────────────────────────────────────────────
+function renderSidebar(agents){
+  document.getElementById('agent-list').innerHTML=Object.values(agents).map(a=>{
+    const isIdle=a.status==='idle',isOff=a.status==='offline';
+    const sc=SC[a.status]||SC.idle;
+    const taskPct=a.tasks_completed_today>0?Math.min(100,a.tasks_completed_today*10):0;
+    return`<div class="agent-tile ${selId===a.id?'sel':''} ${!isOff&&!isIdle?'online':''} ${isOff?'offline':''}"
+      style="--ac:${a.color};--sc:${sc}" onclick="selectAgent('${a.id}')">
+      <div class="tile-top">
+        <div class="tile-icon">${a.emoji}<div class="status-ring" style="--ac:${sc}"></div></div>
+        <div class="tile-info">
+          <div class="tile-name">${a.name}</div>
+          <div class="tile-role">${a.role}</div>
+        </div>
+        <div class="tile-status-badge" style="color:${sc};border-color:${sc}30;background:${sc}08">${SL[a.status]||'—'}</div>
+      </div>
+      ${(isIdle||isOff)?`<div class="funny-msg">${isOff?'🔌 Not installed anywhere':funny(a.id)}</div>`:''}
+      ${a.current_task&&!isIdle&&!isOff?`<div style="font-size:8px;color:rgba(255,255,255,0.2);margin-top:4px;line-height:1.5">${a.current_task}</div>`:''}
+      <div class="tile-bar"><div class="tile-bar-fill" style="width:${taskPct}%;background:${a.color}"></div></div>
+    </div>`;
+  }).join('');
 }
 
-function renderSidebar(agents) {
-  const el = document.getElementById('agent-list');
-  el.innerHTML = Object.values(agents).map(a => `
-    <div class="agent-row ${selectedId===a.id?'sel':''} ${a.status==='busy'||a.status==='active'?'is-busy':''} ${a.status==='offline'?'is-offline':''}"
-         style="--ac:${a.color}"
-         onclick="selectAgent('${a.id}')">
-      <div class="av">
-        ${a.emoji}
-        <div class="sdot ${dotClass(a.status)}"></div>
-      </div>
-      <div class="ai">
-        <div class="an">${a.name}</div>
-        <div class="ar">${a.role}</div>
-      </div>
-      <div class="tc ${a.status==='busy'||a.status==='active'?'busy':''}" style="--ac:${a.color}">
-        ${a.status==='offline'?'off':a.status==='idle'?'—':a.status.slice(0,4)}
-      </div>
-    </div>
-  `).join('');
+// ── RENDER STATS ──────────────────────────────────────────────
+function renderStats(agents){
+  const v=Object.values(agents);
+  document.getElementById('s-online').textContent=v.filter(a=>a.status!=='offline').length;
+  document.getElementById('s-busy').textContent=v.filter(a=>a.status==='busy'||a.status==='active').length;
+  document.getElementById('s-waiting').textContent=v.filter(a=>a.status==='waiting').length;
+  document.getElementById('s-done').textContent=v.reduce((s,a)=>s+(a.tasks_completed_today||0),0);
 }
 
-function renderStats(agents) {
-  const vals = Object.values(agents);
-  document.getElementById('s-online').textContent  = vals.filter(a=>a.status!=='offline').length;
-  document.getElementById('s-busy').textContent    = vals.filter(a=>a.status==='busy'||a.status==='active').length;
-  document.getElementById('s-waiting').textContent = vals.filter(a=>a.status==='waiting').length;
-  document.getElementById('s-done').textContent    = vals.reduce((s,a)=>s+(a.tasks_completed_today||0),0);
-}
-
-function renderPipeline(pipeline) {
-  const wrap = document.getElementById('pipeline-wrap');
-  if (!pipeline || !pipeline.active_project) {
-    document.getElementById('pip-project-label').textContent = 'No active pipeline';
-    document.getElementById('pip-step-label').textContent = '';
-    wrap.innerHTML = `<div class="pip-empty">— No project in pipeline right now. Drop a brief to ARIA. —</div>`;
+// ── RENDER PIPELINE ───────────────────────────────────────────
+function renderPipeline(pip){
+  const wrap=document.getElementById('pip-wrap');
+  if(!pip||!pip.active_project){
+    document.getElementById('pip-title').textContent='NO ACTIVE PIPELINE';
+    document.getElementById('pip-step').textContent='';
+    wrap.innerHTML=`<div class="pip-empty">— Drop a brief to ARIA to start a pipeline —</div>`;
     return;
   }
-  const steps = pipeline.steps || [];
-  const currentIdx = steps.findIndex(s=>s.state==='current');
-  document.getElementById('pip-project-label').textContent = 'Pipeline — ' + pipeline.active_project;
-  document.getElementById('pip-step-label').textContent = currentIdx>=0 ? `STEP ${currentIdx+1} OF ${steps.length}` : '';
-  wrap.innerHTML = `<div class="pip-track">${steps.map((s,i)=>`
-    ${i>0?`<div class="pip-arrow ${steps[i-1].state==='done'?'done-arrow':''}"></div>`:''}
+  const steps=pip.steps||[];
+  const ci=steps.findIndex(s=>s.state==='current');
+  document.getElementById('pip-title').textContent='PIPELINE — '+pip.active_project.toUpperCase();
+  document.getElementById('pip-step').textContent=ci>=0?`STEP ${ci+1} / ${steps.length}`:'';
+  wrap.innerHTML=`<div class="pip-track">${steps.map((s,i)=>`
+    ${i>0?`<div class="pip-connector ${steps[i-1].state==='done'?'done-con':''}"></div>`:''}
     <div class="pip-node" style="--ac:${s.color||'#444'}">
-      <div class="pip-circle pip-${s.state}" style="border-color:${s.color||'#1e1e1e'};color:${s.state==='pending'?'#2a2a2a':s.color};background:${s.state==='pending'?'transparent':s.color+'18'}">
-        ${s.state==='done'?'✓':s.emoji||'○'}
+      <div class="pip-hex ${s.state}">
+        <div class="pip-hex-icon" style="color:${s.state==='pending'?'rgba(255,255,255,0.1)':s.color}">${s.state==='done'?'✓':s.emoji||'○'}</div>
       </div>
-      <div class="pip-lbl" style="color:${s.state==='pending'?'#1e1e1e':s.state==='current'?s.color:'#3a3a3a'}">${s.name}</div>
-      <div class="pip-st"  style="color:${s.state==='done'?'#00D64F':s.state==='current'?s.color:'#1a1a1a'}">${s.state==='done'?'done':s.state==='current'?'●':''}</div>
+      <div class="pip-lbl ${s.state==='current'?'active':''}" style="color:${s.state==='pending'?'rgba(255,255,255,0.1)':s.state==='done'?'rgba(0,255,209,0.5)':s.color}">${s.name}</div>
+      <div class="pip-st" style="color:${s.state==='done'?'rgba(0,255,209,0.4)':s.state==='current'?s.color:'rgba(255,255,255,0.05)'}">${s.state==='done'?'done':s.state==='current'?'●':''}</div>
     </div>
   `).join('')}</div>`;
 }
 
-function renderTasks(agents) {
-  const grid = document.getElementById('tasks-grid');
-  const activeTasks = [];
-  Object.values(agents).forEach(a => {
-    if ((a.status==='busy'||a.status==='waiting'||a.status==='active') && a.current_task) {
-      activeTasks.push({
-        agent: a.name,
-        color: a.color,
-        title: a.current_task,
-        project: a.current_project,
-        status: a.status,
-      });
-    }
-  });
-  if (activeTasks.length === 0) {
-    grid.innerHTML = `<div class="no-tasks">— All agents idle. Nothing in progress. —</div>`;
+// ── RENDER TASKS ──────────────────────────────────────────────
+function renderTasks(agents){
+  const grid=document.getElementById('tasks-grid');
+  const active=Object.values(agents).filter(a=>a.current_task&&a.status!=='idle'&&a.status!=='offline');
+  if(!active.length){
+    grid.innerHTML=`<div class="no-tasks">— All agents idle. System quiet. —</div>`;
     return;
   }
-  grid.innerHTML = activeTasks.map(t => `
-    <div class="task-card" style="--ac:${t.color}">
-      <div class="tc-hd">
-        <div class="tc-ag" style="color:${t.color}">${t.agent}</div>
-        <div class="tc-badge b-${t.status==='waiting'?'waiting':t.status==='busy'?'busy':'queued'}">${t.status}</div>
+  grid.innerHTML=active.map(a=>`
+    <div class="task-card" style="--ac:${a.color}">
+      <div class="tc-top">
+        <div class="tc-agent" style="color:${a.color}">${a.name}</div>
+        <div class="tc-badge b-${a.status==='waiting'?'waiting':a.status==='busy'?'busy':'queued'}">${a.status}</div>
       </div>
-      <div class="tc-title">${t.title}${t.project?`<br><span style="color:#2a2a2a;font-size:8px">${t.project}</span>`:''}</div>
-      <div class="tc-bar"><div class="tc-fill" style="width:${t.status==='waiting'?100:50}%;background:${t.color}"></div></div>
-      <div class="tc-meta"><span>in progress</span><span>${t.status==='waiting'?'awaiting approval':'—'}</span></div>
+      <div class="tc-title">${a.current_task}${a.current_project?`<br><span style="color:rgba(255,255,255,0.12);font-size:8px">${a.current_project}</span>`:''}</div>
+      <div class="tc-prog-track">
+        <div class="tc-prog-fill" style="width:${a.status==='waiting'?100:55}%;background:${a.color}">
+          <div class="tc-prog-dot" style="background:${a.color};box-shadow:0 0 6px ${a.color}"></div>
+        </div>
+      </div>
+      <div class="tc-meta"><span>in progress</span><span>${a.status==='waiting'?'awaiting you':'—'}</span></div>
     </div>
   `).join('');
 }
 
-function renderDetail(agents) {
-  const a = agents[selectedId];
-  if (!a) return;
-  const zone = document.getElementById('detail-zone');
-  const isIdle    = a.status==='idle';
-  const isOffline = a.status==='offline';
-  const installed = a.installed_in || [];
-
-  zone.innerHTML = `
-    <div class="agent-detail-card" style="--ac:${a.color}">
-      <div class="ad-name" style="color:${a.color}">${a.name}</div>
-      <div class="ad-role">${a.role}</div>
-
-      <div class="ad-row">
-        <div class="ad-k">STATUS</div>
-        <div class="ad-v" style="color:${isOffline?'#333':isIdle?'#2a2a2a':a.color}">${a.status.toUpperCase()}</div>
-      </div>
-      <div class="ad-row">
-        <div class="ad-k">CURRENT TASK</div>
-        <div class="ad-v">${a.current_task||'—'}</div>
-      </div>
-      <div class="ad-row">
-        <div class="ad-k">PROJECT</div>
-        <div class="ad-v">${a.current_project||'—'}</div>
-      </div>
-      <div class="ad-row">
-        <div class="ad-k">DONE TODAY</div>
-        <div class="ad-v">${a.tasks_completed_today||0} tasks</div>
-      </div>
-      <div class="ad-row">
-        <div class="ad-k">UPTIME</div>
-        <div class="ad-v">${a.uptime_percent||'—'}%</div>
-      </div>
-
-      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-        <div class="ad-k" style="margin-bottom:6px;">INSTALLED IN</div>
-        <div class="installed-chips">
-          ${['claude-projects','claude-code','api','n8n','make'].map(p=>`
-            <div class="inst-chip ${installed.includes(p)?'active':''}" style="${installed.includes(p)?`--ac:${a.color}`:''}">
-              ${PLATFORM_LABELS[p]}
-            </div>
-          `).join('')}
-        </div>
-        ${installed.length===0?`<div style="font-size:8px;color:#1a1a1a;margin-top:6px;">Not installed anywhere yet</div>`:''}
-      </div>
-
-      ${(isIdle || isOffline) ? `
-        <div class="funny-box" id="funny-box" style="display:block">
-          ${isOffline ? '🔌 Offline — not installed in any platform currently.' : '💤 ' + randomFunny(a.id||selectedId)}
-        </div>
-      ` : ''}
-
-      ${a.current_task && !isIdle && !isOffline ? `
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <div class="ad-k" style="margin-bottom:6px;">PROGRESS</div>
-          <div style="font-size:9px;color:#555;margin-bottom:4px">${a.current_task}</div>
-          <div class="detail-prog-bar"><div class="detail-prog-fill" style="width:${a.status==='waiting'?100:55}%;background:${a.color}"></div></div>
-          <div style="font-size:8px;color:#222;text-align:right;margin-top:2px">${a.status==='waiting'?'100% — awaiting approval':'In progress'}</div>
-        </div>
-      ` : ''}
+// ── RENDER FEED ───────────────────────────────────────────────
+function renderFeed(){
+  const el=document.getElementById('feed-scroll');
+  if(!feedLog.length){el.innerHTML=`<div class="feed-empty">No activity yet — system is quiet.</div>`;return}
+  el.innerHTML=feedLog.slice(0,14).map(f=>`
+    <div class="feed-row">
+      <div class="fr-dot" style="background:${f.color}"></div>
+      <div class="fr-txt"><b style="color:${f.color}">${f.agent}</b> — ${f.text}</div>
+      <div class="fr-time">${f.time}</div>
     </div>
+  `).join('');
+}
 
-    <div style="margin-top:4px;">
-      <div class="rp-title" style="margin-bottom:8px;">Quick Update</div>
-      <div style="display:flex;flex-direction:column;gap:5px;">
+// ── RENDER NOVA ───────────────────────────────────────────────
+function renderNova(alerts){
+  const z=document.getElementById('nova-zone');
+  if(!alerts||!alerts.length){z.innerHTML='';return}
+  z.innerHTML=alerts.map((al,i)=>`
+    <div class="nova-alert">
+      <div class="nova-eyebrow">✳ NOVA ALERT</div>
+      <div class="nova-body">${al.message}</div>
+      <div class="nova-btns">
+        <button class="nova-btn nb-onboard" onclick="onboard(${i})">ONBOARD</button>
+        <button class="nova-btn nb-skip" onclick="dismissNova(${i})">SKIP</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── RENDER DETAIL ─────────────────────────────────────────────
+function renderDetail(agents){
+  const a=agents[selId]; if(!a) return;
+  const sc=SC[a.status]||SC.idle;
+  const isIdle=a.status==='idle', isOff=a.status==='offline';
+  const inst=a.installed_in||[];
+  document.getElementById('detail-zone').innerHTML=`
+    <div class="detail-card" style="--ac:${a.color}">
+      <div class="dc-name" style="color:${a.color};text-shadow:0 0 20px ${a.color}40">${a.name}</div>
+      <div class="dc-role">${a.role}</div>
+      <div class="dc-row"><div class="dc-k">STATUS</div><div class="dc-v" style="color:${sc}">${SL[a.status]||'—'}</div></div>
+      <div class="dc-row"><div class="dc-k">CURRENT TASK</div><div class="dc-v">${a.current_task||'—'}</div></div>
+      <div class="dc-row"><div class="dc-k">PROJECT</div><div class="dc-v">${a.current_project||'—'}</div></div>
+      <div class="dc-row"><div class="dc-k">DONE TODAY</div><div class="dc-v">${a.tasks_completed_today||0}</div></div>
+      <div class="dc-row"><div class="dc-k">UPTIME</div><div class="dc-v">${a.uptime_percent||'—'}%</div></div>
+      <div class="chips">${['claude-projects','claude-code','api','n8n','make'].map(p=>`<div class="chip ${inst.includes(p)?'on':''}" style="${inst.includes(p)?`--ac:${a.color}`:''}">
+        ${PLAT[p]}</div>`).join('')}</div>
+      ${(isIdle||isOff)?`<div class="funny-detail">${isOff?'🔌 Offline — not installed in any platform.':'💤 '+funny(a.id)}</div>`:''}
+      ${a.current_task&&!isIdle&&!isOff?`<div class="dp-prog">
+        <div class="dp-task">${a.current_task}</div>
+        <div class="dp-bar"><div class="dp-fill" style="width:${a.status==='waiting'?100:55}%;background:${a.color}"></div></div>
+        <div class="dp-pct">${a.status==='waiting'?'100% — awaiting approval':'in progress'}</div>
+      </div>`:''}
+    </div>
+    <div class="qupdate">
+      <div class="qu-label">Quick Update</div>
+      <div class="qu-btns">
         ${['idle','busy','waiting','offline'].map(s=>`
-          <button onclick="quickUpdate('${selectedId}','${s}')"
-            style="background:${a.status===s?a.color+'18':'transparent'};border:1px solid ${a.status===s?a.color+'40':'var(--border2)'};
-                   color:${a.status===s?a.color:'var(--text3)'};font-family:inherit;font-size:8px;
-                   letter-spacing:0.1em;padding:5px 10px;border-radius:2px;cursor:pointer;text-align:left;transition:all .12s"
-          >${s.toUpperCase()} ${a.status===s?'← current':''}</button>
-        `).join('')}
+          <button class="qu-btn ${a.status===s?'current-s':''}" style="${a.status===s?`--ac:${a.color};border-color:${a.color};color:${a.color}`:''}"
+            onclick="quickUpdate('${a.id}','${s}')">
+            ${s.toUpperCase()}${a.status===s?' ←':''}
+          </button>`).join('')}
       </div>
     </div>
   `;
-
-  // queue
-  const qzone = document.getElementById('queue-zone');
-  qzone.innerHTML = `<div style="font-size:9px;color:var(--text4);font-style:italic">
-    Queue managed via ARIA. No pending items.
-  </div>`;
 }
 
-function renderNova(alerts) {
-  const zone = document.getElementById('nova-zone');
-  if (!alerts || alerts.length === 0) { zone.innerHTML = ''; return; }
-  zone.innerHTML = alerts.map((al,i) => `
-    <div class="nova-alert">
-      <div class="nova-tag">✳ NOVA ALERT</div>
-      <div class="nova-body">${al.message}</div>
-      <div class="nova-actions">
-        <button class="nova-btn" onclick="onboardAgent(${i})">Onboard</button>
-        <button class="nova-btn skip" onclick="dismissAlert(${i})">Skip</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function renderFeed() {
-  const body = document.getElementById('feed-body');
-  if (feedLog.length === 0) {
-    body.innerHTML = `<div class="feed-empty">No activity yet — system is quiet.</div>`;
-    return;
-  }
-  body.innerHTML = feedLog.slice(0,12).map(f=>`
-    <div class="feed-item">
-      <div class="fi-dot" style="background:${f.color}"></div>
-      <div class="fi-txt"><b style="color:${f.color}">${f.agent}</b> — ${f.text}</div>
-      <div class="fi-time">${f.time}</div>
-    </div>
-  `).join('');
-}
-
-// ─────────────────────────────────────────────────────────────
-//  RENDER ALL
-// ─────────────────────────────────────────────────────────────
-function renderAll(data) {
-  const agents = data.agents;
-  // Inject id into each agent
-  Object.keys(agents).forEach(k => { agents[k].id = k; });
-
-  renderSidebar(agents);
-  renderStats(agents);
+// ── RENDER ALL ────────────────────────────────────────────────
+function renderAll(data){
+  Object.keys(data.agents).forEach(k=>{data.agents[k].id=k});
+  renderSidebar(data.agents);
+  renderStats(data.agents);
   renderPipeline(data.pipeline);
-  renderTasks(agents);
-  renderDetail(agents);
-  renderNova(data.nova_alerts);
+  renderTasks(data.agents);
   renderFeed();
-
-  const ts = new Date(data.system?.last_updated || Date.now());
-  document.getElementById('last-updated').textContent = 'last updated ' + ts.toLocaleTimeString('en-IN');
+  renderNova(data.nova_alerts);
+  renderDetail(data.agents);
+  const ts=new Date(data.system?.last_updated||Date.now());
+  document.getElementById('last-upd').textContent='updated '+ts.toLocaleTimeString('en-IN');
 }
 
-// ─────────────────────────────────────────────────────────────
-//  POLL
-// ─────────────────────────────────────────────────────────────
-async function poll() {
-  const data = await fetchStatus();
-  if (data) {
-    state = data;
-    renderAll(data);
+// ── ACTIONS ───────────────────────────────────────────────────
+function selectAgent(id){selId=id;if(state)renderAll(state)}
+
+async function quickUpdate(agentId,newStatus){
+  if(!secret){
+    secret=localStorage.getItem('ds')||prompt('Enter dashboard secret:');
+    if(!secret)return;
+    localStorage.setItem('ds',secret);
   }
-  let next = POLL_MS;
-  document.getElementById('refresh-info').textContent = `next refresh in ${next/1000}s`;
-  let countdown = next/1000;
-  const countInt = setInterval(()=>{
-    countdown--;
-    document.getElementById('refresh-info').textContent = `next refresh in ${countdown}s`;
-    if(countdown<=0) clearInterval(countInt);
-  }, 1000);
-}
-
-// ─────────────────────────────────────────────────────────────
-//  ACTIONS
-// ─────────────────────────────────────────────────────────────
-function selectAgent(id) {
-  selectedId = id;
-  if (state) renderAll(state);
-}
-
-async function quickUpdate(agentId, newStatus) {
-  const sec = localStorage.getItem('dashboard_secret');
-  if (!sec) {
-    const s = prompt('Enter dashboard secret:');
-    if (!s) return;
-    localStorage.setItem('dashboard_secret', s);
-  }
-  const secret = localStorage.getItem('dashboard_secret');
-
-  // Optimistic update
-  if (state && state.agents[agentId]) {
-    state.agents[agentId].status = newStatus;
-    if (newStatus==='idle'||newStatus==='offline') {
-      state.agents[agentId].current_task = null;
-      state.agents[agentId].current_project = null;
+  if(state&&state.agents[agentId]){
+    state.agents[agentId].status=newStatus;
+    if(newStatus==='idle'||newStatus==='offline'){
+      state.agents[agentId].current_task=null;
+      state.agents[agentId].current_project=null;
     }
+    feedLog.unshift({agent:state.agents[agentId].name,color:state.agents[agentId].color,text:`Status → <b>${newStatus.toUpperCase()}</b>`,time:'just now'});
     renderAll(state);
-
-    feedLog.unshift({
-      agent: state.agents[agentId].name,
-      color: state.agents[agentId].color,
-      text: `Status changed to <b>${newStatus}</b>`,
-      time: 'just now'
-    });
-    renderFeed();
   }
-
-  // Real API update
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ secret, agent_id: agentId, updates: { status: newStatus } })
-    });
-  } catch(e) {
-    console.warn('API update failed (may be offline)', e);
-  }
+  try{
+    await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({secret,agent_id:agentId,updates:{status:newStatus}})});
+  }catch(e){}
 }
 
-function onboardAgent(idx) {
-  if (!state) return;
-  const alert = state.nova_alerts[idx];
-  feedLog.unshift({ agent:'NOVA', color:'#7B2FFF', text:`<b>${alert?.agent_name||'New Agent'}</b> onboarded — added to system`, time:'just now' });
-  state.nova_alerts.splice(idx,1);
+function onboard(i){
+  if(!state)return;
+  const al=state.nova_alerts[i];
+  feedLog.unshift({agent:'NOVA',color:'#BF5FFF',text:`<b>${al?.agent_name||'New Agent'}</b> onboarded`,time:'just now'});
+  state.nova_alerts.splice(i,1);
+  renderAll(state);
+}
+function dismissNova(i){
+  if(!state)return;
+  state.nova_alerts.splice(i,1);
   renderAll(state);
 }
 
-function dismissAlert(idx) {
-  if (!state) return;
-  state.nova_alerts.splice(idx,1);
-  renderAll(state);
+// ── POLL ──────────────────────────────────────────────────────
+async function poll(){
+  const data=await fetchStatus();
+  if(data){state=data;renderAll(data)}
+  else if(!state){
+    try{const r=await fetch('/status.json');if(r.ok){state=await r.json();renderAll(state)}}catch(e){}
+  }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  CLOCK
-// ─────────────────────────────────────────────────────────────
-function updateClock() {
-  document.getElementById('clock').textContent =
+// ── CLOCK ─────────────────────────────────────────────────────
+function tick(){
+  document.getElementById('clock').textContent=
     new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 
-// ─────────────────────────────────────────────────────────────
-//  FALLBACK DEMO MODE (when API not connected)
-// ─────────────────────────────────────────────────────────────
-async function initDemoFallback() {
-  // Load status.json directly if API not available (for local preview)
-  try {
-    const res = await fetch('/status.json');
-    if (res.ok) {
-      const data = await res.json();
-      state = data;
-      Object.keys(data.agents).forEach(k => { data.agents[k].id = k; });
-      renderAll(data);
-    }
-  } catch(e) {}
-}
-
-// ─────────────────────────────────────────────────────────────
-//  BOOT
-// ─────────────────────────────────────────────────────────────
-updateClock();
-setInterval(updateClock, 1000);
-
-// Try API first, fallback to demo
-poll().then(() => {
-  if (!state) initDemoFallback();
-});
-setInterval(poll, POLL_MS);
+tick();setInterval(tick,1000);
+poll();setInterval(poll,POLL);
 </script>
 </body>
 </html>
