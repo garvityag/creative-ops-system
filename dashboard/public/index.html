@@ -1534,6 +1534,15 @@ function clearChat() {
 // Init models on load
 renderModels();
 
+tick();
+setInterval(tick,1000);
+
+// Run poll immediately on load with a small delay
+setTimeout(()=>{
+  poll();
+  setInterval(poll,POLL);
+},500);
+
 </script>
 </body>
 </html>
