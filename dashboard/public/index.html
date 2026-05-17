@@ -913,6 +913,7 @@ async function fetchStatus(){
     try{
       const r=await fetch(API_AGENTS+'?t='+Date.now());
       if(r.ok) d=await r.json();
+      if(d && !d.agents) d=null; // reject wrong format
       console.log('API agents response:', d);
     }catch(_){}
     if(!d){
@@ -1198,6 +1199,7 @@ function renderUsageBanner(){
 
 // ── ALL ──
 function renderAll(data){
+  if(!data||!data.agents)return;
   Object.keys(data.agents).forEach(k=>{data.agents[k].id=k});
   renderStats(data.agents);
   renderAgents(data.agents);
