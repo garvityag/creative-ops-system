@@ -913,6 +913,7 @@ async function fetchStatus(){
     try{
       const r=await fetch(API_AGENTS+'?t='+Date.now());
       if(r.ok) d=await r.json();
+      console.log('API agents response:', d);
     }catch(_){}
     if(!d){
       const r=await fetch('/api/status?t='+Date.now());
@@ -922,6 +923,7 @@ async function fetchStatus(){
     document.getElementById('err-bar').style.display='none';
     document.getElementById('live-pill').classList.remove('err');
     document.getElementById('conn-lbl').textContent='LIVE';
+    console.log('Final data being used:', d);
     return d;
   }catch(e){
     document.getElementById('err-bar').style.display='block';
