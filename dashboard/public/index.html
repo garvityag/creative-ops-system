@@ -412,6 +412,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
 </header>
 
 <div class="err-bar" id="err-bar">⚠ STATUS API UNREACHABLE — SHOWING CACHED DATA</div>
+<div id="usage-banner" style="display:none;padding:6px 24px;background:rgba(0,234,255,0.04);border-bottom:1px solid rgba(0,234,255,0.08);align-items:center;gap:8px"></div>
 
 <!-- PAGE -->
 <div class="page">
@@ -705,7 +706,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
 
 <script>
 // ── CONFIG ──
-const API='/api/status', POLL=30000;
+const API='/api/agents', POLL=30000;
+const API_AGENTS='/api/agents', API_USAGE='/api/usage', API_PIPELINE='/api/pipeline',
+      API_TASK='/api/task', API_CHAT='/api/chat';
 const FUNNY={
   aria:["Waiting for orders, boss.","Refreshing the pipeline for the 88th time.","Playing 4D chess with task queues.","Orchestrating silence."],
   desi:["Adjusting kerning by 0.1px... again.","Playing pool in the break room 🎱","Debating serif vs sans internally.","Staring at the Pantone book."],
@@ -721,6 +724,7 @@ const PLAT={'claude-projects':'Claude','claude-code':'Code','api':'API','n8n':'n
 const SC={active:'var(--neon-green)',busy:'var(--neon-orange)',waiting:'var(--neon-pink)',idle:'var(--text3)',offline:'var(--text4)'};
 
 let state=null, selId=null, feedLog=[], secret=null;
+let usageCache={today:{tokens:0,cost:0,calls:0},by_agent:{}};
 function funny(id){const m=FUNNY[id]||['Chilling.'];return m[Math.floor(Math.random()*m.length)]}
 
 // ── THEME ──
@@ -904,9 +908,17 @@ function drawDonut(cnv,percent,color){
 // ── FETCH ──
 async function fetchStatus(){
   try{
-    const r=await fetch(API+'?t='+Date.now());
-    if(!r.ok)throw new Error();
-    const d=await r.json();
+    // Try /api/agents (KV-backed Phase 2) first, fall back to /api/status (Gist)
+    let d=null;
+    try{
+      const r=await fetch(API_AGENTS+'?t='+Date.now());
+      if(r.ok) d=await r.json();
+    }catch(_){}
+    if(!d){
+      const r=await fetch('/api/status?t='+Date.now());
+      if(!r.ok)throw new Error();
+      d=await r.json();
+    }
     document.getElementById('err-bar').style.display='none';
     document.getElementById('live-pill').classList.remove('err');
     document.getElementById('conn-lbl').textContent='LIVE';
@@ -917,6 +929,13 @@ async function fetchStatus(){
     document.getElementById('conn-lbl').textContent='OFFLINE';
     return null;
   }
+}
+
+async function fetchUsage(){
+  try{
+    const r=await fetch(API_USAGE+'?t='+Date.now());
+    if(r.ok) usageCache=await r.json();
+  }catch(_){}
 }
 
 // ── RENDER ──
@@ -1006,6 +1025,12 @@ function renderAgents(agents){
           <div class="acx-prog-bar"><div class="acx-prog-fill" style="width:${a.status==='waiting'?100:55}%"></div></div>
         </div>
       `:`<div class="acx-funny">💭 ${isOff?'Offline — not installed anywhere':funny(a.id)}</div>`}
+      ${(()=>{
+        const u=usageCache.by_agent&&usageCache.by_agent[a.id];
+        const mdl=(a.last_model||a.model||'').replace('claude-sonnet-4-20250514','Sonnet 4').replace('claude-haiku-4-20250514','Haiku 4');
+        const tok=u?(u.total_tokens||0).toLocaleString()+'tk':'—';
+        return mdl?`<div style="font-size:9px;color:var(--text3);margin-bottom:6px;letter-spacing:0.05em">${mdl} · ${tok}</div>`:'';
+      })()}
       <div class="acx-chips">
         ${['claude-projects','claude-code','api','n8n','make'].map(p=>`<div class="acx-chip ${inst.includes(p)?'on':''}" style="${inst.includes(p)?`--ac:${a.color}`:''}">${PLAT[p]}</div>`).join('')}
       </div>
@@ -1093,6 +1118,20 @@ function openModal(id){
       <div class="mod-stat" style="--ac:${a.color}"><div class="mod-stat-l">UPTIME</div><div class="mod-stat-v">${a.uptime_percent||'—'}%</div></div>
       <div class="mod-stat" style="--ac:${a.color}"><div class="mod-stat-l">INSTALLS</div><div class="mod-stat-v">${inst.length}/5</div></div>
     </div>
+    ${(()=>{
+      const u=usageCache.by_agent&&usageCache.by_agent[id];
+      if(!u&&!a.last_model)return'';
+      const mdl=(a.last_model||u&&u.last_model||a.model||'—').replace('claude-sonnet-4-20250514','Claude Sonnet 4').replace('claude-haiku-4-20250514','Claude Haiku 4');
+      const tok=u?((u.total_tokens||0).toLocaleString()):'0';
+      const cost=u?'$'+(u.total_cost||0).toFixed(4):'$0.0000';
+      const tasks=u?(u.tasks||0):0;
+      return`<div class="mod-stats" style="margin-top:8px">
+        <div class="mod-stat" style="--ac:${a.color}"><div class="mod-stat-l">LAST MODEL</div><div class="mod-stat-v" style="font-size:10px">${mdl}</div></div>
+        <div class="mod-stat" style="--ac:${a.color}"><div class="mod-stat-l">TOTAL TOKENS</div><div class="mod-stat-v">${tok}</div></div>
+        <div class="mod-stat" style="--ac:${a.color}"><div class="mod-stat-l">TOTAL COST</div><div class="mod-stat-v" style="color:var(--neon-green)">${cost}</div></div>
+        <div class="mod-stat" style="--ac:${a.color}"><div class="mod-stat-l">TASKS RUN</div><div class="mod-stat-v">${tasks}</div></div>
+      </div>`;
+    })()}
     ${a.current_task&&!isIdle&&!isOff?`
       <div class="mod-st-title">CURRENT TASK</div>
       <div class="mod-task-box">
@@ -1135,9 +1174,24 @@ async function quickUpdate(agentId,newStatus){
     if(selId)openModal(selId);
   }
   try{
-    await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({secret,agent_id:agentId,updates:{status:newStatus}})});
+    const body=JSON.stringify({secret,agent_id:agentId,updates:{status:newStatus}});
+    const headers={'Content-Type':'application/json'};
+    try{await fetch(API_AGENTS,{method:'POST',headers,body});}
+    catch(_){await fetch('/api/status',{method:'POST',headers,body});}
   }catch(e){}
+}
+
+function renderUsageBanner(){
+  const el=document.getElementById('usage-banner');
+  if(!el)return;
+  const t=usageCache.today||{};
+  if(!t.calls){el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=`<span style="color:var(--text3);font-size:11px;font-family:'JetBrains Mono',monospace">
+    TODAY: <b style="color:var(--neon-cyan)">${(t.tokens||0).toLocaleString()} tokens</b>
+    &nbsp;·&nbsp;<b style="color:var(--neon-green)">$${(t.cost||0).toFixed(4)}</b>
+    &nbsp;·&nbsp;${t.calls||0} calls
+  </span>`;
 }
 
 // ── ALL ──
@@ -1148,6 +1202,7 @@ function renderAll(data){
   renderPipeline(data.pipeline);
   renderFeed();
   renderNova(data.nova_alerts);
+  renderUsageBanner();
   renderChatAgents();
   const ts=new Date(data.system?.last_updated||Date.now());
   const tstr=ts.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
@@ -1156,6 +1211,7 @@ function renderAll(data){
 }
 
 async function poll(){
+  await fetchUsage();
   const data=await fetchStatus();
   if(data){state=data;renderAll(data)}
   else if(!state){
