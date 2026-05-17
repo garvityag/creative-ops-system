@@ -1,0 +1,27 @@
+{
+  "outputDirectory": "public",
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/agents",   "destination": "/api/agents.js"   },
+    { "source": "/api/task",     "destination": "/api/task.js"     },
+    { "source": "/api/usage",    "destination": "/api/usage.js"    },
+    { "source": "/api/pipeline", "destination": "/api/pipeline.js" },
+    { "source": "/api/chat",     "destination": "/api/chat.js"     },
+    { "source": "/api/status",   "destination": "/api/status.js"   }
+  ]
+}
