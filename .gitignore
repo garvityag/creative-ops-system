@@ -17,3 +17,11 @@ Thumbs.db
 # Secrets — never commit these
 secrets.txt
 *.secret
+
+# NEXUS AI
+nexus-ai/.env
+nexus-ai/nexus_memory/
+nexus-ai/nexus_usage.db
+nexus-ai/__pycache__/
+nexus-ai/**/__pycache__/
+nexus-ai/*.pyc
