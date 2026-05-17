@@ -1416,105 +1416,45 @@ async function sendChat() {
   input.value = '';
   addMessage('user', text, chatAgent);
   chatHistory.push({ role:'user', content: text });
-
   showTyping();
 
-  // Get agent persona
-  const persona = AGENT_PERSONAS[chatAgent];
-  const systemPrompt = persona?.sys || 'You are a helpful AI agent.';
-
   try {
-    let response = '';
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agent_id: chatAgent,
+        message: text,
+        model: chatModel,
+        history: chatHistory.slice(-10),
+      })
+    });
 
-    // Route based on model
-    if (chatModel.includes('groq') || chatModel === 'llama3-groq' || chatModel === 'mixtral-groq') {
-      // Groq via API
-      response = await callGroq(chatHistory, systemPrompt);
-    } else if (['dolphin-mixtral','mythomax','nous-hermes','openhermes','nous-hermes'].includes(chatModel)) {
-      // OpenRouter
-      response = await callOpenRouter(chatHistory, systemPrompt, chatModel);
-    } else if (['tinydolphin','phi3-mini'].includes(chatModel)) {
-      // Local Ollama
-      response = await callOllama(chatHistory, systemPrompt, chatModel);
-    } else {
-      response = await callClaude(chatHistory, systemPrompt);
-    }
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'API error');
 
     removeTyping();
+    const response = data.response || data.content || 'No response';
     chatHistory.push({ role:'assistant', content: response });
     addMessage('agent', response, chatAgent);
+
+    // Update token stats
+    if (data.tokens) {
+      chatTokens += data.tokens.total || data.tokens || 0;
+      const cost = data.cost_usd || data.cost || 0;
+      chatMsgCount++;
+      document.getElementById('chat-msg-count').textContent = chatMsgCount;
+      document.getElementById('chat-token-count').textContent = chatTokens.toLocaleString();
+      document.getElementById('chat-cost').textContent = '$' + cost.toFixed(4);
+      const modelEl = document.getElementById('chat-cur-model');
+      if (modelEl) modelEl.textContent = data.model || chatModel;
+    }
+
   } catch(e) {
     removeTyping();
-    addMessage('agent', `⚠️ Error: ${e.message}. Check API key in settings.`, chatAgent);
+    addMessage('agent', '⚠️ Error: ' + e.message, chatAgent);
   }
-}
-
-async function callClaude(history, system) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01'},
-    body: JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:1000,
-      system,
-      messages: history.slice(-10),
-    })
-  });
-  const d = await res.json();
-  return d.content?.[0]?.text || 'No response';
-}
-
-async function callOpenRouter(history, system, model) {
-  const modelMap = {
-    'dolphin-mixtral':'cognitivecomputations/dolphin-mixtral-8x7b',
-    'mythomax':'Gryphe/MythoMax-L2-13b',
-    'nous-hermes':'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO',
-    'openhermes':'teknium/OpenHermes-2.5-Mistral-7B',
-  };
-  const key = localStorage.getItem('openrouter_key') || prompt('Enter OpenRouter API key (openrouter.ai/keys):');
-  if (key) localStorage.setItem('openrouter_key', key);
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-    body: JSON.stringify({
-      model: modelMap[model] || model,
-      messages:[{role:'system',content:system},...history.slice(-10)],
-    })
-  });
-  const d = await res.json();
-  return d.choices?.[0]?.message?.content || d.error?.message || 'No response';
-}
-
-async function callGroq(history, system) {
-  const modelMap = {'llama3-groq':'llama-3.3-70b-versatile','mixtral-groq':'mixtral-8x7b-32768'};
-  const key = localStorage.getItem('groq_key') || prompt('Enter Groq API key (console.groq.com):');
-  if (key) localStorage.setItem('groq_key', key);
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-    body: JSON.stringify({
-      model: modelMap[chatModel] || 'llama-3.3-70b-versatile',
-      messages:[{role:'system',content:system},...history.slice(-10)],
-      max_tokens:1000,
-    })
-  });
-  const d = await res.json();
-  return d.choices?.[0]?.message?.content || d.error?.message || 'No response';
-}
-
-async function callOllama(history, system, model) {
-  const modelMap = {'tinydolphin':'tinydolphin','phi3-mini':'phi3:mini'};
-  const res = await fetch('http://localhost:11434/api/chat', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      model: modelMap[model] || model,
-      messages:[{role:'system',content:system},...history.slice(-10)],
-      stream:false,
-    })
-  });
-  const d = await res.json();
-  return d.message?.content || 'No response (is Ollama running?)';
 }
 
 function clearChat() {
