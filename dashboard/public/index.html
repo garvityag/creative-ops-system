@@ -1216,10 +1216,21 @@ function renderAll(data){
 
 async function poll(){
   await fetchUsage();
-  const data=await fetchStatus();
-  if(data){state=data;renderAll(data)}
-  else if(!state){
-    try{const r=await fetch('/status.json');if(r.ok){state=await r.json();renderAll(state)}}catch(e){}
+  try{
+    const r=await fetch('/api/agents?t='+Date.now());
+    if(r.ok){
+      const data=await r.json();
+      if(data&&data.agents){
+        state=data;
+        renderAll(data);
+        document.getElementById('err-bar').style.display='none';
+        document.getElementById('live-pill').classList.remove('err');
+        document.getElementById('conn-lbl').textContent='LIVE';
+      }
+    }
+  }catch(e){
+    document.getElementById('live-pill').classList.add('err');
+    document.getElementById('conn-lbl').textContent='OFFLINE';
   }
 }
 
