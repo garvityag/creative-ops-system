@@ -41,9 +41,13 @@ async def on_ready():
     print(f"[NEXUS BOT] Logged in as {bot.user} (ID: {bot.user.id})")
     print(f"[NEXUS BOT] Connected to {len(bot.guilds)} guild(s)")
 
-    # Sync slash commands
+    # Sync slash commands (guild-specific for instant registration)
     try:
-        synced = await bot.tree.sync()
+        guild_obj = discord.Object(id=GUILD_ID) if GUILD_ID else None
+        if guild_obj:
+            synced = await bot.tree.sync(guild=guild_obj)
+        else:
+            synced = await bot.tree.sync()
         print(f"[NEXUS BOT] Synced {len(synced)} slash command(s)")
     except Exception as e:
         print(f"[NEXUS BOT] Sync error: {e}")
