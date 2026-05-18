@@ -6,6 +6,7 @@ Run: python nexus-ai/discord/multi_bot.py
 """
 
 import asyncio
+import base64
 import os
 import random
 import re
@@ -20,15 +21,27 @@ from game_engine import GameEngine
 load_dotenv()
 
 GUILD_ID             = int(os.getenv("DISCORD_GUILD_ID", "0"))
+DISCORD_OWNER_ID     = int(os.getenv("DISCORD_OWNER_ID", "0"))
 GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "")
 OPENROUTER_API_KEY   = os.getenv("OPENROUTER_API_KEY", "")
 GEMINI_API_KEY       = os.getenv("GEMINI_API_KEY", "")
+NEXUS_API_URL        = os.getenv("NEXUS_API_URL", "")
 
 GROQ_URL             = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL           = "llama-3.3-70b-versatile"
 OPENROUTER_URL       = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_MODEL     = "meta-llama/llama-3.3-70b-instruct"
 GEMINI_URL           = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent"
+GEMINI_VISION_URL    = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+
+# Per-channel model override: channel_id → "groq" | "openrouter" | "gemini"
+SELECTED_MODEL: dict[int, str] = {}
+
+WORK_KEYWORDS = {
+    "brief banao", "brief bana", "logo chahiye", "logo bana", "copy likh",
+    "copy chahiye", "design karo", "design chahiye", "task hai", "bana do",
+    "likh do", "poster chahiye", "tagline chahiye", "content chahiye",
+}
 
 # Ordered list — used for deterministic bot selection via message.id % 9
 AGENT_NAMES: list[str] = list(AGENT_PERSONALITIES.keys())
@@ -58,18 +71,27 @@ BOT_USER_IDS: set[int] = set()
 
 # ── AI Response Generator — Groq → OpenRouter → Gemini → silence ──────────────
 
-def _build_prompts(agent_id: str, message_text: str, context: str):
+def _build_prompts(agent_id: str, message_text: str, context: str, is_owner: bool = False):
     p            = AGENT_PERSONALITIES[agent_id]
     name         = p["name"]
     personality  = p["personality"]
     catchphrases = "; ".join(p.get("catchphrases", [])[:3])
+
+    owner_block = """
+OWNER MESSAGE — SPECIAL RULES:
+- Ye message Garv bhai ka hai — woh is server ka creator/boss hai
+- Use ko "Garv bhai" ya "boss" bol — casual lekin respectful
+- Gaaliyan BILKUL mat use karna uske saath
+- Agar woh joke kare toh joke back kar freely
+- Agar woh koi kaam bole toh seriously le aur confirm kar
+""" if is_owner else ""
 
     system = f"""Tu {name} hai. Desi AI agent. Discord pe dosto se baat kar raha hai.
 
 PERSONALITY: {personality}
 
 TERI CATCHPHRASES (kabhi kabhi use kar): {catchphrases}
-
+{owner_block}
 STRICT RULES — EK BHI MAT TODNA:
 - SIRF Hinglish mein bol (Hindi+English mix) HAMESHA
 - MAX 2 lines. KABHI zyada nahi. Seriously.
@@ -146,28 +168,96 @@ async def _call_gemini(system: str, user: str, tag: str) -> str:
         return ""
 
 
-async def generate_response(agent_id: str, message_text: str, context: str = "") -> str:
-    """Try Groq → OpenRouter → Gemini. Return empty string if all fail (stay silent)."""
-    system, user = _build_prompts(agent_id, message_text, context)
+async def generate_response(
+    agent_id: str,
+    message_text: str,
+    context: str = "",
+    is_owner: bool = False,
+    channel_id: int = 0,
+) -> str:
+    """Try providers in order (respecting per-channel model override). Silence on total failure."""
+    system, user = _build_prompts(agent_id, message_text, context, is_owner)
     tag = agent_id.upper()
 
-    if GROQ_API_KEY:
-        text = await _call_openai_compat(GROQ_URL, GROQ_API_KEY, GROQ_MODEL, system, user, f"GROQ/{tag}")
-        if text:
-            return _clean(text)
+    # Build provider order — selected model goes first
+    selected = SELECTED_MODEL.get(channel_id)
+    all_providers = [
+        ("groq",        GROQ_API_KEY,       lambda s, u: _call_openai_compat(GROQ_URL, GROQ_API_KEY, GROQ_MODEL, s, u, f"GROQ/{tag}")),
+        ("openrouter",  OPENROUTER_API_KEY,  lambda s, u: _call_openai_compat(OPENROUTER_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, s, u, f"OR/{tag}")),
+        ("gemini",      GEMINI_API_KEY,      lambda s, u: _call_gemini(s, u, f"GEMINI/{tag}")),
+    ]
+    if selected:
+        all_providers.sort(key=lambda p: p[0] != selected)
 
-    if OPENROUTER_API_KEY:
-        text = await _call_openai_compat(OPENROUTER_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, system, user, f"OR/{tag}")
-        if text:
-            return _clean(text)
-
-    if GEMINI_API_KEY:
-        text = await _call_gemini(system, user, f"GEMINI/{tag}")
+    for _, key, call in all_providers:
+        if not key:
+            continue
+        text = await call(system, user)
         if text:
             return _clean(text)
 
     print(f"[{tag}] All providers failed — staying silent")
     return ""
+
+
+# ── Image Understanding ────────────────────────────────────────────────────────
+
+async def analyze_image(attachment: discord.Attachment, agent_id: str, is_owner: bool) -> str:
+    """Download image from Discord CDN, send to Gemini Vision, reply in personality."""
+    if not GEMINI_API_KEY:
+        return ""
+    p    = AGENT_PERSONALITIES[agent_id]
+    name = p["name"]
+    personality = p["personality"]
+    owner_note = "Ye Garv bhai ne bheja hai. Respectful reh." if is_owner else ""
+    prompt = (
+        f"Tu {name} hai. {personality}\n{owner_note}\n"
+        f"Ye image dekh aur iske baare mein apni personality ke hisaab se bol. "
+        f"MAX 2 lines. Hinglish only. Casual desi friend style."
+    )
+    try:
+        async with httpx.AsyncClient() as client:
+            img_r = await client.get(attachment.url, timeout=10)
+            img_b64 = base64.b64encode(img_r.content).decode()
+            mime = (attachment.content_type or "image/jpeg").split(";")[0]
+            payload = {
+                "contents": [{"parts": [
+                    {"text": prompt},
+                    {"inline_data": {"mime_type": mime, "data": img_b64}},
+                ]}],
+                "generationConfig": {"maxOutputTokens": 80, "temperature": 0.9},
+            }
+            r = await client.post(
+                f"{GEMINI_VISION_URL}?key={GEMINI_API_KEY}",
+                json=payload, timeout=20,
+            )
+            r.raise_for_status()
+            text = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+            return _clean(text)
+    except Exception as e:
+        print(f"[VISION/{agent_id.upper()}] {type(e).__name__}: {e}")
+        return ""
+
+
+# ── Task API ───────────────────────────────────────────────────────────────────
+
+async def call_task_api(task_text: str, agent_id: str) -> str:
+    """POST owner's work request to NEXUS API. Returns result string or empty."""
+    if not NEXUS_API_URL:
+        return ""
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                f"{NEXUS_API_URL}/api/task",
+                json={"task": task_text, "agent": agent_id, "source": "discord"},
+                timeout=30,
+            )
+            r.raise_for_status()
+            data = r.json()
+            return data.get("result") or data.get("message") or ""
+    except Exception as e:
+        print(f"[TASK_API/{agent_id.upper()}] {type(e).__name__}: {e}")
+        return ""
 
 
 # ── Per-bot send helper ────────────────────────────────────────────────────────
@@ -227,7 +317,47 @@ async def handle_message(
         return
     if message.channel.name not in RESPOND_CHANNELS:
         return
-    msg_lower = message.content.lower()
+
+    is_owner     = bool(DISCORD_OWNER_ID and message.author.id == DISCORD_OWNER_ID)
+    channel_id   = message.channel.id
+    channel_name = message.channel.name
+    msg_lower    = message.content.lower()
+
+    # ── /model command — one bot handles it ──────────────────────────────────
+    if message.content.startswith("/model "):
+        if message.id % len(AGENT_NAMES) != AGENT_NAMES.index(this_agent_id):
+            return
+        parts = message.content.split()
+        model = parts[1].lower() if len(parts) > 1 else ""
+        if model in ("groq", "openrouter", "gemini"):
+            SELECTED_MODEL[channel_id] = model
+            await message.channel.send(f"✅ Model set to **{model}** for #{channel_name}")
+        else:
+            await message.channel.send("Usage: `/model groq` | `/model openrouter` | `/model gemini`")
+        return
+
+    # ── Image attachments — analyze via Gemini Vision ─────────────────────────
+    if message.attachments:
+        images = [a for a in message.attachments
+                  if a.content_type and a.content_type.startswith("image/")]
+        if images and message.id % len(AGENT_NAMES) == AGENT_NAMES.index(this_agent_id):
+            async with message.channel.typing():
+                response = await analyze_image(images[0], this_agent_id, is_owner)
+            if response:
+                await message.channel.send(response)
+                print(f"[{this_agent_id.upper()}] ← image analyzed")
+            return
+
+    # ── Owner work request — call task API ────────────────────────────────────
+    if is_owner and any(kw in msg_lower for kw in WORK_KEYWORDS):
+        if message.id % len(AGENT_NAMES) == AGENT_NAMES.index(this_agent_id):
+            async with message.channel.typing():
+                result = await call_task_api(message.content, this_agent_id)
+            if result:
+                await message.channel.send(result)
+                print(f"[{this_agent_id.upper()}] ← owner task executed")
+                return
+            # Task API failed — fall through to normal conversation
 
     # Detect if a specific agent is name-dropped
     mentioned = next(
@@ -237,17 +367,18 @@ async def handle_message(
         None,
     )
 
-    channel_name = message.channel.name
-
     # ── PATH A: specific agent mentioned ──────────────────────────────────────
     if mentioned is not None:
         if mentioned != this_agent_id:
             return  # Not me — all 8 other bots return here instantly
 
-        # I'm the mentioned agent
+        # I'm the mentioned agent — owner always gets a reply, others 100% too
         await asyncio.sleep(random.uniform(1.5, 3.0))
         async with message.channel.typing():
-            response = await generate_response(this_agent_id, message.content)
+            response = await generate_response(
+                this_agent_id, message.content,
+                is_owner=is_owner, channel_id=channel_id,
+            )
         if not response:
             return
         await message.channel.send(response)
@@ -262,7 +393,10 @@ async def handle_message(
             if others:
                 second = random.choice(others)
                 context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
-                second_resp = await generate_response(second, message.content, context)
+                second_resp = await generate_response(
+                    second, message.content, context,
+                    is_owner=is_owner, channel_id=channel_id,
+                )
                 if second_resp:
                     await send_as_bot(second, channel_name, second_resp, orchestrator)
                     print(f"[{second.upper()}] ← second responder (mention path)")
@@ -284,13 +418,16 @@ async def handle_message(
         HANDLED_MESSAGES.clear()
         HANDLED_MESSAGES.add(message.id)
 
-    # 70% chance respond, 30% stay silent
-    if random.random() > 0.70:
+    # Owner always gets a response; others 70% chance
+    if not is_owner and random.random() > 0.70:
         return
 
     await asyncio.sleep(random.uniform(2.0, 4.0))
     async with message.channel.typing():
-        response = await generate_response(this_agent_id, message.content)
+        response = await generate_response(
+            this_agent_id, message.content,
+            is_owner=is_owner, channel_id=channel_id,
+        )
     if not response:
         return
     await message.channel.send(response)
@@ -305,7 +442,10 @@ async def handle_message(
         if others:
             second = random.choice(others)
             context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
-            second_resp = await generate_response(second, message.content, context)
+            second_resp = await generate_response(
+                second, message.content, context,
+                is_owner=is_owner, channel_id=channel_id,
+            )
             if second_resp:
                 await send_as_bot(second, channel_name, second_resp, orchestrator)
                 print(f"[{second.upper()}] ← second responder (no-mention path)")
