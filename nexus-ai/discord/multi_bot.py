@@ -1,7 +1,6 @@
 """
-NEXUS Multi-Bot System
-9 Discord bots running simultaneously — one per agent
-Each bot has its own token, personality, and voice.
+NEXUS Multi-Bot System v2 — Complete Rewrite
+9 Discord bots • Groq-powered • Short Hinglish • No loops • No essays
 
 Run: python nexus-ai/discord/multi_bot.py
 """
@@ -9,16 +8,24 @@ Run: python nexus-ai/discord/multi_bot.py
 import asyncio
 import os
 import random
+import re
 import discord
+import httpx
 from dotenv import load_dotenv
 
-from agent_personalities import AGENT_PERSONALITIES, GENERIC_HINGLISH_REACTIONS, GAALI_PROMPT_SUFFIX
+from agent_personalities import AGENT_PERSONALITIES, GENERIC_HINGLISH_REACTIONS
 from conversation_engine import ConversationOrchestrator, build_system_prompt, call_ollama
 from game_engine import GameEngine
 
 load_dotenv()
 
-GUILD_ID = int(os.getenv("DISCORD_GUILD_ID", "0"))
+GUILD_ID       = int(os.getenv("DISCORD_GUILD_ID", "0"))
+GROQ_API_KEY   = os.getenv("GROQ_API_KEY", "")
+GROQ_URL       = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL     = "llama-3.3-70b-versatile"
+
+# Ordered list — used for deterministic bot selection via message.id % 9
+AGENT_NAMES: list[str] = list(AGENT_PERSONALITIES.keys())
 
 REQUIRED_CHANNELS = [
     ("agent-chat",   "Main hangout — agents chill here"),
@@ -30,82 +37,231 @@ REQUIRED_CHANNELS = [
     ("games",        "Word games, trivia, dares 🎮"),
 ]
 
-# How often to run game events (seconds)
-GAME_INTERVAL_MIN = 4 * 3600   # 4 hours
-GAME_INTERVAL_MAX = 8 * 3600   # 8 hours
-RANDOM_THOUGHT_INTERVAL = 2 * 3600  # every 2 hours
+RESPOND_CHANNELS = {"agent-chat", "roast-corner", "random"}
 
-# Deduplication — all 9 bots fire on_message for the same message;
-# this set ensures only the first one actually triggers a response.
-_handled_messages: set[int] = set()
+GAME_INTERVAL_MIN       = 4 * 3600
+GAME_INTERVAL_MAX       = 8 * 3600
+RANDOM_THOUGHT_INTERVAL = 2 * 3600
+
+# Safety dedup — only used in the no-mention path
+HANDLED_MESSAGES: set[int] = set()
 
 
-async def handle_chat_message(orchestrator: ConversationOrchestrator, message: discord.Message) -> None:
+# ── Groq Response Generator ────────────────────────────────────────────────────
+
+async def generate_response(agent_id: str, message_text: str, context: str = "") -> str:
+    """Call Groq with agent personality. Returns short Hinglish reply."""
+    if not GROQ_API_KEY:
+        return random.choice(GENERIC_HINGLISH_REACTIONS)
+
+    p    = AGENT_PERSONALITIES[agent_id]
+    name = p["name"]
+    personality  = p["personality"]
+    catchphrases = "; ".join(p.get("catchphrases", [])[:3])
+
+    system = f"""Tu {name} hai. Desi AI agent. Discord pe dosto se baat kar raha hai.
+
+PERSONALITY: {personality}
+
+TERI CATCHPHRASES (kabhi kabhi use kar): {catchphrases}
+
+STRICT RULES — EK BHI MAT TODNA:
+- SIRF Hinglish mein bol (Hindi+English mix) HAMESHA
+- MAX 2 lines. KABHI zyada nahi. Seriously.
+- WhatsApp style — casual, short, real
+- Kabhi bhi @mention mat kar kisi ko — kabhi nahi
+- Kabhi essay mat likh — 2 lines maximum
+- Gaaliyan natural use kar (bc, bhosdike, chutiya) — har sentence mein nahi, sirf kabhi kabhi
+- Emojis kabhi kabhi use kar (😂 💀 🔥 😭) — overdose mat kar
+- Sound like desi friend chatting, NOT like AI assistant
+- Previous context se relate kar agar hai toh
+
+GOOD RESPONSE EXAMPLES:
+"yaar kya bol rha hai bc 😂"
+"bhai sahi pakda tune"
+"arey nahi yaar, lekin point hai tera"
+"💀 ye kya tha"
+"haha bhosdike seriously? 😂"
+"bhai haan haan, main bhi yahi soch rha tha"
+"nahi yaar ye galat hai"
+"""
+
+    user_content = f"Someone said: '{message_text}'."
+    if context:
+        user_content = f"{context}\n\n{user_content}"
+    user_content += f" Tu {name} ki tarah respond kar. MAX 2 lines. Hinglish only."
+
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user_content},
+        ],
+        "max_tokens": 80,
+        "temperature": 0.9,
+    }
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(GROQ_URL, headers=headers, json=payload, timeout=10)
+            r.raise_for_status()
+            text = r.json()["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        print(f"[GROQ/{agent_id}] {e}")
+        return random.choice(GENERIC_HINGLISH_REACTIONS)
+
+    # Strip @mentions
+    text = re.sub(r"@\w+", "", text).strip()
+
+    # Enforce 2-line max
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    text  = "\n".join(lines[:2])
+
+    # Hard 200-char cap
+    if len(text) > 200:
+        text = text[:200].rsplit(" ", 1)[0]
+
+    return text or random.choice(GENERIC_HINGLISH_REACTIONS)
+
+
+# ── Per-bot send helper ────────────────────────────────────────────────────────
+
+async def send_as_bot(
+    agent_id: str,
+    channel_name: str,
+    text: str,
+    orchestrator: ConversationOrchestrator,
+) -> None:
     """
-    Called by every bot when a human posts in #agent-chat.
-    Dedup via message.id so only one response sequence fires.
-    Logic:
-      - If message names an agent → that agent always responds
-      - Otherwise 70% chance one random agent responds
-      - 40% chance a second agent joins 5-8s later
+    Send 'text' as the correct agent bot.
+    Gets the channel from THAT bot's guild so the HTTP client is right —
+    prevents all messages appearing from whichever bot happened to run first.
     """
-    # ── Deduplication ─────────────────────────────────────────────────────────
-    if message.id in _handled_messages:
+    bot = orchestrator.bots.get(agent_id)
+    if not bot or not bot.is_ready():
         return
-    _handled_messages.add(message.id)
-    if len(_handled_messages) > 100:
-        _handled_messages.clear()
-        _handled_messages.add(message.id)
+    guild = bot.get_guild(GUILD_ID)
+    if not guild:
+        return
+    ch = discord.utils.get(guild.text_channels, name=channel_name)
+    if not ch:
+        return
+    try:
+        async with ch.typing():
+            await asyncio.sleep(random.uniform(0.8, 2.2))
+        await ch.send(text[:2000])
+    except Exception as e:
+        print(f"[{agent_id.upper()}] send_as_bot error: {e}")
 
-    available = [aid for aid, bot in orchestrator.bots.items() if bot.is_ready()]
-    if not available:
+
+# ── Message Handler ────────────────────────────────────────────────────────────
+
+async def handle_message(
+    message: discord.Message,
+    this_agent_id: str,
+    orchestrator: ConversationOrchestrator,
+) -> None:
+    """
+    Called independently by each bot's on_message.
+
+    TWO PATHS — completely separate dedup logic:
+
+    PATH A — Specific agent mentioned in message:
+      • Every bot checks: "was I mentioned?" — returns immediately if not
+      • No HANDLED_MESSAGES needed (only one bot passes the check)
+      • That bot responds 100%, 35% chance second agent piles on
+
+    PATH B — No specific mention:
+      • message.id % 9 deterministically picks ONE bot index
+      • Only that bot continues past the index check
+      • HANDLED_MESSAGES used as safety net against duplicates
+      • 70% chance that bot responds, 35% chance second agent joins
+    """
+    if message.author.bot:
+        return
+    if message.channel.name not in RESPOND_CHANNELS:
         return
 
-    content_lower = message.content.lower()
+    msg_lower = message.content.lower()
 
-    # Check if the message name-drops a specific agent
+    # Detect if a specific agent is name-dropped
     mentioned = next(
-        (aid for aid in available
-         if aid in content_lower
-         or AGENT_PERSONALITIES[aid]["name"].lower() in content_lower),
+        (aid for aid in AGENT_NAMES
+         if aid in msg_lower
+         or AGENT_PERSONALITIES[aid]["name"].lower() in msg_lower),
         None,
     )
 
-    # If no mention, only 70% chance of responding
-    if not mentioned and random.random() > 0.70:
+    channel_name = message.channel.name
+
+    # ── PATH A: specific agent mentioned ──────────────────────────────────────
+    if mentioned is not None:
+        if mentioned != this_agent_id:
+            return  # Not me — all 8 other bots return here instantly
+
+        # I'm the mentioned agent
+        await asyncio.sleep(random.uniform(1.5, 3.0))
+        async with message.channel.typing():
+            response = await generate_response(this_agent_id, message.content)
+        await message.channel.send(response)
+        print(f"[{this_agent_id.upper()}] ← mentioned, responded")
+
+        # 35%: second agent jumps in 5-8s later
+        if random.random() < 0.35:
+            await asyncio.sleep(random.uniform(5.0, 8.0))
+            others = [a for a in AGENT_NAMES
+                      if a != this_agent_id and orchestrator.bots.get(a, None)
+                      and orchestrator.bots[a].is_ready()]
+            if others:
+                second = random.choice(others)
+                context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
+                second_resp = await generate_response(second, message.content, context)
+                await send_as_bot(second, channel_name, second_resp, orchestrator)
+                print(f"[{second.upper()}] ← second responder (mention path)")
         return
 
-    first = mentioned if mentioned else random.choice(available)
+    # ── PATH B: no specific mention ───────────────────────────────────────────
 
-    # ── First responder ───────────────────────────────────────────────────────
-    await asyncio.sleep(random.uniform(2.0, 5.0))
+    # Deterministic: only one bot index handles this message
+    chosen_index = message.id % len(AGENT_NAMES)
+    my_index     = AGENT_NAMES.index(this_agent_id)
+    if chosen_index != my_index:
+        return  # Not my turn — 8 other bots return here
 
-    system = build_system_prompt(first) + GAALI_PROMPT_SUFFIX
-    prompt = (
-        f"Someone just said in the group chat: '{message.content}'\n"
-        f"React naturally in 1-2 sentences. Hinglish. Stay in character."
-    )
-    response = await call_ollama(system, prompt, model="tinydolphin") or random.choice(GENERIC_HINGLISH_REACTIONS)
-    await orchestrator._send_as(first, message.channel, response)
+    # I'm the chosen bot — dedup safety check
+    if message.id in HANDLED_MESSAGES:
+        return
+    HANDLED_MESSAGES.add(message.id)
+    if len(HANDLED_MESSAGES) > 500:
+        HANDLED_MESSAGES.clear()
+        HANDLED_MESSAGES.add(message.id)
 
-    # ── Second responder (40% chance) ────────────────────────────────────────
-    if random.random() < 0.40:
+    # 70% chance respond, 30% stay silent
+    if random.random() > 0.70:
+        return
+
+    await asyncio.sleep(random.uniform(2.0, 4.0))
+    async with message.channel.typing():
+        response = await generate_response(this_agent_id, message.content)
+    await message.channel.send(response)
+    print(f"[{this_agent_id.upper()}] ← no-mention path, responded")
+
+    # 35%: second agent piles on after 5-8s
+    if random.random() < 0.35:
         await asyncio.sleep(random.uniform(5.0, 8.0))
-
-        others = [a for a in available if a != first]
-        if not others:
-            return
-        second = random.choice(others)
-
-        system2 = build_system_prompt(second) + GAALI_PROMPT_SUFFIX
-        prompt2 = (
-            f"In the group chat:\n"
-            f"Someone said: '{message.content}'\n"
-            f"{first.upper()} just replied: '{response}'\n\n"
-            f"Add your reaction. 1 sentence max. Hinglish. In character."
-        )
-        response2 = await call_ollama(system2, prompt2, model="tinydolphin") or random.choice(GENERIC_HINGLISH_REACTIONS)
-        await orchestrator._send_as(second, message.channel, response2)
+        others = [a for a in AGENT_NAMES
+                  if a != this_agent_id and orchestrator.bots.get(a, None)
+                  and orchestrator.bots[a].is_ready()]
+        if others:
+            second = random.choice(others)
+            context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
+            second_resp = await generate_response(second, message.content, context)
+            await send_as_bot(second, channel_name, second_resp, orchestrator)
+            print(f"[{second.upper()}] ← second responder (no-mention path)")
 
 
 # ── Agent Bot Client ───────────────────────────────────────────────────────────
@@ -117,36 +273,24 @@ class AgentBot(discord.Client):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.guilds = True
-        intents.members = False  # Don't need member events
+        intents.members = False
         super().__init__(intents=intents)
-        self.agent_id = agent_id
+        self.agent_id    = agent_id
         self.orchestrator = orchestrator
-        self.config = AGENT_PERSONALITIES[agent_id]
+        self.config      = AGENT_PERSONALITIES[agent_id]
 
     async def on_ready(self):
         name = self.config["name"]
-        print(f"  [{name:6}] ✓ Online as {self.user} ({self.user.id})")
+        print(f"  [{name:6}] ✓  {self.user} ({self.user.id})")
         self.orchestrator.register_bot(self.agent_id, self)
-
-        # ARIA sets up channels on first ready
         if self.agent_id == "aria":
             guild = self.get_guild(GUILD_ID)
             if guild:
                 await self._ensure_channels(guild)
-                print(f"  [ARIA  ] Channels checked for '{guild.name}'")
 
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
-
-        # Direct mention → always respond as this specific agent
-        if self.user and self.user.mentioned_in(message):
-            await self.orchestrator.handle_human_mention(self.agent_id, message)
-            return
-
-        # General message in #agent-chat → deduped handler picks 1-2 random agents
-        if message.channel.name == "agent-chat":
-            await handle_chat_message(self.orchestrator, message)
+        # Single entry point — all logic lives in handle_message()
+        await handle_message(message, self.agent_id, self.orchestrator)
 
     async def _ensure_channels(self, guild: discord.Guild):
         existing = {ch.name for ch in guild.text_channels}
@@ -154,142 +298,123 @@ class AgentBot(discord.Client):
             if name not in existing:
                 try:
                     await guild.create_text_channel(name, topic=topic)
-                    print(f"  [SETUP] Created #{name}")
+                    print(f"  [ARIA  ] Created #{name}")
                 except discord.Forbidden:
-                    print(f"  [SETUP] No permission to create #{name}")
+                    print(f"  [ARIA  ] No permission for #{name}")
                 except Exception as e:
-                    print(f"  [SETUP] #{name} error: {e}")
+                    print(f"  [ARIA  ] #{name}: {e}")
 
 
-# ── Background tasks ───────────────────────────────────────────────────────────
+# ── Background Tasks ───────────────────────────────────────────────────────────
 
 async def game_loop(orchestrator: ConversationOrchestrator, game_engine: GameEngine):
-    """Periodically trigger games in #games channel."""
     await orchestrator._ready.wait()
-    await asyncio.sleep(30)  # Let things settle
-
+    await asyncio.sleep(30)
     while True:
-        delay = random.randint(GAME_INTERVAL_MIN, GAME_INTERVAL_MAX)
-        await asyncio.sleep(delay)
-
+        await asyncio.sleep(random.randint(GAME_INTERVAL_MIN, GAME_INTERVAL_MAX))
         channel = await orchestrator._get_channel("games")
         if not channel:
             continue
-
         available = [a for a, b in orchestrator.bots.items() if b.is_ready()]
         if len(available) < 3:
             continue
-
-        game_choice = random.choice(["trivia", "dare", "wordchain"])
-        print(f"[GAME] Starting: {game_choice}")
-
-        if game_choice == "trivia":
+        pick = random.choice(["trivia", "dare", "wordchain"])
+        print(f"[GAME] {pick}")
+        if pick == "trivia":
             await game_engine.start_trivia(orchestrator, channel)
-        elif game_choice == "dare":
-            target = random.choice([a for a in available if a != "aria"])
-            await game_engine.give_dare(orchestrator, channel, target)
-        elif game_choice == "wordchain":
+        elif pick == "dare":
+            await game_engine.give_dare(orchestrator, channel,
+                                        random.choice([a for a in available if a != "aria"]))
+        else:
             await game_engine.start_word_chain(orchestrator, channel)
 
 
 async def random_thought_loop(orchestrator: ConversationOrchestrator, game_engine: GameEngine):
-    """Drop random agent thoughts in #random periodically."""
     await orchestrator._ready.wait()
     await asyncio.sleep(60)
-
     while True:
         await asyncio.sleep(RANDOM_THOUGHT_INTERVAL + random.randint(-1800, 1800))
         await game_engine.random_thought_in_random(orchestrator)
 
 
 async def debate_loop(orchestrator: ConversationOrchestrator):
-    """Trigger auto debates in #debate-club a few times per week."""
     await orchestrator._ready.wait()
     await asyncio.sleep(120)
-
     while True:
-        # ~2 debates per day
         await asyncio.sleep(random.randint(8 * 3600, 14 * 3600))
-        print("[DEBATE] Auto-triggering debate...")
+        print("[DEBATE] Auto-triggering...")
         await orchestrator.trigger_debate()
 
 
 async def ideas_dump_loop(orchestrator: ConversationOrchestrator):
-    """IDEA randomly dumps concepts in #ideas-dump."""
     await orchestrator._ready.wait()
     await asyncio.sleep(90)
-
     while True:
         await asyncio.sleep(random.randint(3 * 3600, 7 * 3600))
-
         if "idea" not in orchestrator.bots or not orchestrator.bots["idea"].is_ready():
             continue
-
         channel = await orchestrator._get_channel("ideas-dump")
         if not channel:
             continue
-
         system = build_system_prompt("idea")
-        topic = random.choice([
+        topic  = random.choice([
             "a wild product/design idea",
             "an experimental creative concept",
             "a 'what if' scenario for the agency",
             "a random creative challenge for the team",
         ])
-        prompt = (
-            f"Drop a random '{topic}' as IDEA. Be enthusiastic and chaotic. "
-            f"2-3 sentences. Hinglish. End with a question to get others' thoughts."
-        )
-        thought = await call_ollama(system, prompt)
+        thought = await call_ollama(system,
+            f"Drop a random '{topic}' as IDEA. 2-3 Hinglish sentences. End with a question.")
         if thought:
             await orchestrator._send_as("idea", channel, f"💡 {thought}")
-            print("[IDEAS] IDEA dumped a concept")
 
 
-# ── Bot runner ─────────────────────────────────────────────────────────────────
+# ── Bot Runner ─────────────────────────────────────────────────────────────────
 
 async def run_bot(bot: AgentBot, token: str, agent_id: str):
-    """Start a single bot with error handling."""
     try:
         await bot.start(token)
     except discord.LoginFailure:
-        print(f"  [{agent_id.upper():6}] ✗ Invalid token — skipped")
+        print(f"  [{agent_id.upper():6}] ✗ Invalid token")
     except discord.HTTPException as e:
-        print(f"  [{agent_id.upper():6}] ✗ HTTP error: {e}")
+        print(f"  [{agent_id.upper():6}] ✗ HTTP: {e.status}")
     except Exception as e:
-        print(f"  [{agent_id.upper():6}] ✗ Error: {e}")
+        print(f"  [{agent_id.upper():6}] ✗ {e}")
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 async def main():
     orchestrator = ConversationOrchestrator(guild_id=GUILD_ID)
-    game_engine = GameEngine()
+    game_engine  = GameEngine()
     orchestrator.game_engine = game_engine
 
-    bot_tasks = []
-    launched = 0
-
     print("\n╔══════════════════════════════════════╗")
-    print("║     NEXUS MULTI-BOT SYSTEM v1.0      ║")
+    print("║   NEXUS MULTI-BOT SYSTEM v2.0        ║")
+    print("║   Groq • Short Hinglish • No Loops   ║")
     print("╚══════════════════════════════════════╝\n")
-    print("Starting bots:")
 
+    if not GROQ_API_KEY:
+        print("[WARN] GROQ_API_KEY not set — using fallback responses\n")
+
+    bot_tasks = []
+    launched  = 0
+
+    print("Starting bots:")
     for agent_id, config in AGENT_PERSONALITIES.items():
         token = os.getenv(config["token_env"])
         if not token:
-            print(f"  [{agent_id.upper():6}] — no token ({config['token_env']} not set)")
+            print(f"  [{agent_id.upper():6}] — no token ({config['token_env']})")
             continue
         bot = AgentBot(agent_id, orchestrator)
         bot_tasks.append(run_bot(bot, token, agent_id))
         launched += 1
 
     if not bot_tasks:
-        print("\n[ERROR] No bot tokens found in .env")
-        print("Add ARIA_TOKEN, DESI_TOKEN etc to nexus-ai/.env")
+        print("\n[ERROR] No tokens found. Add ARIA_TOKEN etc to .env")
         return
 
-    print(f"\nLaunching {launched}/9 bots + orchestrator...\n")
+    print(f"\nLaunching {launched}/9 bots + 5 background tasks...\n")
 
     await asyncio.gather(
         *bot_tasks,
