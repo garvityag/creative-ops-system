@@ -12,7 +12,7 @@ import random
 import discord
 from dotenv import load_dotenv
 
-from agent_personalities import AGENT_PERSONALITIES
+from agent_personalities import AGENT_PERSONALITIES, GENERIC_HINGLISH_REACTIONS
 from conversation_engine import ConversationOrchestrator, build_system_prompt, call_ollama
 from game_engine import GameEngine
 
@@ -34,6 +34,78 @@ REQUIRED_CHANNELS = [
 GAME_INTERVAL_MIN = 4 * 3600   # 4 hours
 GAME_INTERVAL_MAX = 8 * 3600   # 8 hours
 RANDOM_THOUGHT_INTERVAL = 2 * 3600  # every 2 hours
+
+# Deduplication — all 9 bots fire on_message for the same message;
+# this set ensures only the first one actually triggers a response.
+_handled_messages: set[int] = set()
+
+
+async def handle_chat_message(orchestrator: ConversationOrchestrator, message: discord.Message) -> None:
+    """
+    Called by every bot when a human posts in #agent-chat.
+    Dedup via message.id so only one response sequence fires.
+    Logic:
+      - If message names an agent → that agent always responds
+      - Otherwise 70% chance one random agent responds
+      - 40% chance a second agent joins 5-8s later
+    """
+    # ── Deduplication ─────────────────────────────────────────────────────────
+    if message.id in _handled_messages:
+        return
+    _handled_messages.add(message.id)
+    if len(_handled_messages) > 100:
+        _handled_messages.clear()
+        _handled_messages.add(message.id)
+
+    available = [aid for aid, bot in orchestrator.bots.items() if bot.is_ready()]
+    if not available:
+        return
+
+    content_lower = message.content.lower()
+
+    # Check if the message name-drops a specific agent
+    mentioned = next(
+        (aid for aid in available
+         if aid in content_lower
+         or AGENT_PERSONALITIES[aid]["name"].lower() in content_lower),
+        None,
+    )
+
+    # If no mention, only 70% chance of responding
+    if not mentioned and random.random() > 0.70:
+        return
+
+    first = mentioned if mentioned else random.choice(available)
+
+    # ── First responder ───────────────────────────────────────────────────────
+    await asyncio.sleep(random.uniform(2.0, 5.0))
+
+    system = build_system_prompt(first)
+    prompt = (
+        f"Someone just said in the group chat: '{message.content}'\n"
+        f"React naturally in 1-2 sentences. Hinglish. Stay in character."
+    )
+    response = await call_ollama(system, prompt) or random.choice(GENERIC_HINGLISH_REACTIONS)
+    await orchestrator._send_as(first, message.channel, response)
+
+    # ── Second responder (40% chance) ────────────────────────────────────────
+    if random.random() < 0.40:
+        await asyncio.sleep(random.uniform(5.0, 8.0))
+
+        others = [a for a in available if a != first]
+        if not others:
+            return
+        second = random.choice(others)
+
+        system2 = build_system_prompt(second)
+        prompt2 = (
+            f"In the group chat:\n"
+            f"Someone said: '{message.content}'\n"
+            f"{first.upper()} just replied: '{response}'\n\n"
+            f"Add your reaction. 1 sentence max. Hinglish. In character."
+        )
+        response2 = await call_ollama(system2, prompt2) or random.choice(GENERIC_HINGLISH_REACTIONS)
+        await orchestrator._send_as(second, message.channel, response2)
 
 
 # ── Agent Bot Client ───────────────────────────────────────────────────────────
@@ -66,9 +138,15 @@ class AgentBot(discord.Client):
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
-        # Respond when directly mentioned by a human
+
+        # Direct mention → always respond as this specific agent
         if self.user and self.user.mentioned_in(message):
             await self.orchestrator.handle_human_mention(self.agent_id, message)
+            return
+
+        # General message in #agent-chat → deduped handler picks 1-2 random agents
+        if message.channel.name == "agent-chat":
+            await handle_chat_message(self.orchestrator, message)
 
     async def _ensure_channels(self, guild: discord.Guild):
         existing = {ch.name for ch in guild.text_channels}
