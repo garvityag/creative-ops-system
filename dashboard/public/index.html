@@ -82,11 +82,18 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
    PAGE 1 — HOME
 ════════════════════════════════════════════ */
 #page-home{
+  position:relative;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:var(--bg);overflow:hidden;
 }
 #page-home canvas#sphere-canvas{
-  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;
+}
+.home-overlay{
+  position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 45%,rgba(5,6,8,0.15) 0%,rgba(5,6,8,0.6) 55%,rgba(5,6,8,0.9) 100%),
+    linear-gradient(to bottom,rgba(5,6,8,0.4) 0%,transparent 30%,transparent 65%,rgba(5,6,8,0.8) 100%);
 }
 .home-content{position:relative;z-index:10;text-align:center;width:100%;max-width:900px;padding:0 24px}
 .home-eyebrow{
@@ -111,15 +118,19 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
   margin-bottom:40px;font-weight:400;letter-spacing:0.02em;
 }
 .home-stats{
-  display:flex;justify-content:center;gap:32px;margin-bottom:40px;flex-wrap:wrap;
+  display:flex;justify-content:center;gap:0;margin-bottom:40px;flex-wrap:wrap;
+  background:rgba(0,255,148,0.04);border:1px solid rgba(0,255,148,0.12);
+  border-radius:16px;padding:16px 0;
 }
-.hstat{text-align:center}
+.hstat{text-align:center;flex:1;min-width:100px;max-width:160px;
+  border-right:1px solid rgba(0,255,148,0.1);}
+.hstat:last-child{border-right:none}
 .hstat-val{
   font-family:'Outfit',sans-serif;font-size:clamp(28px,4vw,42px);font-weight:700;
   letter-spacing:-0.03em;color:var(--green);
   text-shadow:0 0 20px rgba(0,255,148,0.4);
 }
-.hstat-lbl{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0.15em;margin-top:2px}
+.hstat-lbl{font-size:9px;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;letter-spacing:0.15em;margin-top:2px;text-transform:uppercase}
 .home-cta{
   display:inline-flex;align-items:center;gap:10px;
   padding:14px 32px;border-radius:100px;cursor:pointer;font-size:14px;font-weight:600;
@@ -130,9 +141,11 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
 }
 .home-cta:hover{transform:translateY(-2px);box-shadow:0 0 60px rgba(0,255,148,0.4),0 12px 40px -8px rgba(0,255,148,0.5)}
 .home-agents-row{
-  position:absolute;bottom:24px;left:0;right:0;
-  display:flex;align-items:center;justify-content:center;gap:16px;z-index:10;
-  flex-wrap:wrap;padding:0 20px;
+  position:absolute;bottom:20px;left:0;right:0;
+  display:flex;align-items:center;justify-content:center;gap:14px;z-index:10;
+  flex-wrap:wrap;padding:0 24px;
+  background:linear-gradient(to top,rgba(5,6,8,0.7) 0%,transparent 100%);
+  padding-top:28px;padding-bottom:16px;
 }
 .h-agent-dot{
   display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;
@@ -509,6 +522,19 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
 
 @media(max-width:1024px){.chat-right{display:none}.chat-left{width:240px}}
 @media(max-width:768px){.chat-left{width:200px}.dash-sidebar{width:180px}}
+
+/* ── DASH VIEWS ── */
+.dash-view{display:none;flex-direction:column;gap:16px}
+.dash-view.dv-active{display:flex}
+.dv-header{margin-bottom:4px}
+.dv-title{font-size:22px;font-weight:700;font-family:'Outfit',sans-serif;letter-spacing:-0.02em}
+.dv-sub{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:3px;letter-spacing:0.05em}
+.dv-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 20px;color:var(--text3);gap:12px;text-align:center;
+}
+.dv-empty-icon{font-size:36px;opacity:0.3}
+.dv-empty-text{font-size:13px;font-family:'JetBrains Mono',monospace}
 </style>
 </head>
 <body>
@@ -535,6 +561,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
 ════════════════════════════════════════════ -->
 <section class="page" id="page-home">
   <canvas id="sphere-canvas"></canvas>
+  <div class="home-overlay"></div>
   <div class="home-content">
     <div class="home-eyebrow">autonomous ai system</div>
     <div class="home-title"><span class="glow">NEXUS AI</span></div>
@@ -556,17 +583,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
 <section class="page" id="page-dashboard">
   <div class="dash-sidebar">
     <div class="sidebar-section-lbl">Main</div>
-    <div class="sidebar-item active"><span class="sidebar-icon">📊</span>Overview</div>
-    <div class="sidebar-item"><span class="sidebar-icon">🤖</span>Agents</div>
-    <div class="sidebar-item"><span class="sidebar-icon">🔄</span>Pipeline</div>
-    <div class="sidebar-item"><span class="sidebar-icon">📋</span>Tasks</div>
+    <div class="sidebar-item active" data-view="overview"  onclick="showDashView('overview')"><span class="sidebar-icon">📊</span>Overview</div>
+    <div class="sidebar-item"        data-view="agents"    onclick="showDashView('agents')"><span class="sidebar-icon">🤖</span>Agents</div>
+    <div class="sidebar-item"        data-view="pipeline"  onclick="showDashView('pipeline')"><span class="sidebar-icon">🔄</span>Pipeline</div>
+    <div class="sidebar-item"        data-view="tasks"     onclick="showDashView('tasks')"><span class="sidebar-icon">📋</span>Tasks</div>
     <div class="sidebar-section-lbl" style="margin-top:8px">Analytics</div>
-    <div class="sidebar-item"><span class="sidebar-icon">💬</span>Chat Logs</div>
-    <div class="sidebar-item"><span class="sidebar-icon">🧠</span>Models</div>
-    <div class="sidebar-item"><span class="sidebar-icon">💰</span>Usage &amp; Cost</div>
+    <div class="sidebar-item"        data-view="chatlogs"  onclick="showDashView('chatlogs')"><span class="sidebar-icon">💬</span>Chat Logs</div>
+    <div class="sidebar-item"        data-view="models"    onclick="showDashView('models')"><span class="sidebar-icon">🧠</span>Models</div>
+    <div class="sidebar-item"        data-view="usage"     onclick="showDashView('usage')"><span class="sidebar-icon">💰</span>Usage &amp; Cost</div>
     <div class="sidebar-section-lbl" style="margin-top:8px">System</div>
-    <div class="sidebar-item"><span class="sidebar-icon">⚙️</span>Settings</div>
-    <div class="sidebar-item"><span class="sidebar-icon">🏠</span><span onclick="goPage('home')">Home</span></div>
+    <div class="sidebar-item"        data-view="settings"  onclick="showDashView('settings')"><span class="sidebar-icon">⚙️</span>Settings</div>
+    <div class="sidebar-item"                              onclick="goPage('home')"><span class="sidebar-icon">🏠</span>Home</div>
   </div>
   <div class="dash-main">
     <div class="dash-topbar">
@@ -578,47 +605,204 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
     </div>
     <div class="dash-content">
 
-      <!-- Row 1: Task Progress + Today's Tasks + Pipeline -->
-      <div class="dash-row dash-row-3">
-        <div class="d-card">
-          <div class="dc-title">Task Progress</div>
-          <div class="dc-sub">ACTIVE TASKS</div>
-          <div id="task-progress-list"></div>
+      <!-- ── OVERVIEW VIEW ── -->
+      <div class="dash-view dv-active" id="dash-view-overview">
+        <div class="dash-row dash-row-3">
+          <div class="d-card">
+            <div class="dc-title">Task Progress</div>
+            <div class="dc-sub">ACTIVE TASKS</div>
+            <div id="task-progress-list"></div>
+          </div>
+          <div class="d-card">
+            <div class="dc-title">Performance</div>
+            <div class="dc-sub">ACTIVITY LAST 24H</div>
+            <canvas id="perf-canvas"></canvas>
+          </div>
+          <div class="d-card">
+            <div class="dc-title">Token Usage</div>
+            <div class="dc-sub">DAILY CONSUMPTION</div>
+            <div class="token-bars" id="token-bars"></div>
+            <div style="margin-top:14px">
+              <div class="cost-row"><span class="cost-lbl">Cost Today</span><span class="cost-val" id="cost-today">$0.00</span></div>
+              <div class="cost-row"><span class="cost-lbl">Cost Month</span><span class="cost-val" id="cost-month">$0.00</span></div>
+            </div>
+          </div>
         </div>
         <div class="d-card">
-          <div class="dc-title">Performance</div>
-          <div class="dc-sub">ACTIVITY LAST 24H</div>
-          <canvas id="perf-canvas"></canvas>
+          <div class="dc-title">Agent Status</div>
+          <div class="dc-sub">ALL 9 AGENTS</div>
+          <div class="dash-row dash-row-3x3" id="agent-grid"></div>
         </div>
-        <div class="d-card">
-          <div class="dc-title">Token Usage</div>
-          <div class="dc-sub">DAILY CONSUMPTION</div>
-          <div class="token-bars" id="token-bars"></div>
-          <div style="margin-top:14px">
-            <div class="cost-row"><span class="cost-lbl">Cost Today</span><span class="cost-val" id="cost-today">$0.00</span></div>
-            <div class="cost-row"><span class="cost-lbl">Cost Month</span><span class="cost-val" id="cost-month">$0.00</span></div>
+        <div class="dash-row dash-row-2">
+          <div class="d-card">
+            <div class="dc-title">Active Pipeline</div>
+            <div class="dc-sub">CURRENT WORKFLOW</div>
+            <div class="pip-flow" id="pip-flow"></div>
+          </div>
+          <div class="d-card">
+            <div class="dc-title">Live Feed</div>
+            <div class="dc-sub">RECENT EVENTS</div>
+            <div id="live-feed" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto"></div>
           </div>
         </div>
       </div>
 
-      <!-- Row 2: Agent Status Grid -->
-      <div class="d-card">
-        <div class="dc-title">Agent Status</div>
-        <div class="dc-sub">ALL 9 AGENTS</div>
-        <div class="dash-row dash-row-3x3" id="agent-grid"></div>
-      </div>
-
-      <!-- Row 3: Pipeline + Feed -->
-      <div class="dash-row dash-row-2">
-        <div class="d-card">
-          <div class="dc-title">Active Pipeline</div>
-          <div class="dc-sub">CURRENT WORKFLOW</div>
-          <div class="pip-flow" id="pip-flow"></div>
+      <!-- ── AGENTS VIEW ── -->
+      <div class="dash-view" id="dash-view-agents">
+        <div class="dv-header">
+          <div class="dv-title">All Agents</div>
+          <div class="dv-sub">9 AGENTS REGISTERED</div>
         </div>
         <div class="d-card">
-          <div class="dc-title">Live Feed</div>
-          <div class="dc-sub">RECENT EVENTS</div>
-          <div id="live-feed" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto"></div>
+          <div class="dash-row dash-row-3x3" id="agents-view-grid"></div>
+        </div>
+      </div>
+
+      <!-- ── PIPELINE VIEW ── -->
+      <div class="dash-view" id="dash-view-pipeline">
+        <div class="dv-header">
+          <div class="dv-title">Pipeline</div>
+          <div class="dv-sub">ACTIVE WORKFLOW STEPS</div>
+        </div>
+        <div class="d-card" style="padding:28px 24px">
+          <div class="pip-flow" id="pip-flow-2" style="gap:4px"></div>
+        </div>
+        <div class="d-card">
+          <div class="dc-title">Pipeline Log</div>
+          <div class="dc-sub">STEP HISTORY</div>
+          <div id="pipeline-log" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+
+      <!-- ── TASKS VIEW ── -->
+      <div class="dash-view" id="dash-view-tasks">
+        <div class="dv-header">
+          <div class="dv-title">Tasks</div>
+          <div class="dv-sub">ALL ACTIVE &amp; QUEUED TASKS</div>
+        </div>
+        <div class="d-card">
+          <div id="tasks-view-list"></div>
+        </div>
+      </div>
+
+      <!-- ── CHAT LOGS VIEW ── -->
+      <div class="dash-view" id="dash-view-chatlogs">
+        <div class="dv-header">
+          <div class="dv-title">Chat Logs</div>
+          <div class="dv-sub">AGENT CONVERSATION HISTORY</div>
+        </div>
+        <div class="d-card">
+          <div id="chatlogs-view-list" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+
+      <!-- ── MODELS VIEW ── -->
+      <div class="dash-view" id="dash-view-models">
+        <div class="dv-header">
+          <div class="dv-title">AI Models</div>
+          <div class="dv-sub">ACTIVE PROVIDERS &amp; MODELS</div>
+        </div>
+        <div class="dash-row dash-row-2">
+          <div class="d-card">
+            <div class="dc-title">Groq</div>
+            <div class="dc-sub">PRIMARY PROVIDER</div>
+            <div style="margin-top:10px">
+              <div class="cost-row"><span class="cost-lbl">Model</span><span class="cost-val" style="color:var(--green)">llama-3.3-70b-versatile</span></div>
+              <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● ONLINE</span></div>
+              <div class="cost-row"><span class="cost-lbl">RPM Limit</span><span class="cost-val">30</span></div>
+            </div>
+          </div>
+          <div class="d-card">
+            <div class="dc-title">OpenRouter</div>
+            <div class="dc-sub">FALLBACK PROVIDER</div>
+            <div style="margin-top:10px">
+              <div class="cost-row"><span class="cost-lbl">Model</span><span class="cost-val" style="color:var(--orange)">dolphin-mistral</span></div>
+              <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● ONLINE</span></div>
+              <div class="cost-row"><span class="cost-lbl">$/1M tokens</span><span class="cost-val">$0.20</span></div>
+            </div>
+          </div>
+          <div class="d-card">
+            <div class="dc-title">Gemini</div>
+            <div class="dc-sub">VISION PROVIDER</div>
+            <div style="margin-top:10px">
+              <div class="cost-row"><span class="cost-lbl">Model</span><span class="cost-val" style="color:var(--cyan)">gemini-2.0-flash-lite</span></div>
+              <div class="cost-row"><span class="cost-lbl">Vision</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● gemini-1.5-flash</span></div>
+              <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● ONLINE</span></div>
+            </div>
+          </div>
+          <div class="d-card">
+            <div class="dc-title">Claude</div>
+            <div class="dc-sub">ORCHESTRATION</div>
+            <div style="margin-top:10px">
+              <div class="cost-row"><span class="cost-lbl">Model</span><span class="cost-val" style="color:var(--purple)">claude-sonnet-4-6</span></div>
+              <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● ONLINE</span></div>
+              <div class="cost-row"><span class="cost-lbl">$/1M tokens</span><span class="cost-val">$3.00</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── USAGE VIEW ── -->
+      <div class="dash-view" id="dash-view-usage">
+        <div class="dv-header">
+          <div class="dv-title">Usage &amp; Cost</div>
+          <div class="dv-sub">TOKEN CONSUMPTION &amp; SPEND</div>
+        </div>
+        <div class="dash-row dash-row-2">
+          <div class="d-card">
+            <div class="dc-title">Token Breakdown</div>
+            <div class="dc-sub">BY PROVIDER TODAY</div>
+            <div class="token-bars" id="token-bars-2" style="margin-top:10px"></div>
+          </div>
+          <div class="d-card">
+            <div class="dc-title">Cost Summary</div>
+            <div class="dc-sub">CURRENT PERIOD</div>
+            <div style="margin-top:10px">
+              <div class="cost-row"><span class="cost-lbl">Today</span><span class="cost-val" id="cost-today-2">$0.00</span></div>
+              <div class="cost-row"><span class="cost-lbl">This Week</span><span class="cost-val" id="cost-week">$0.00</span></div>
+              <div class="cost-row"><span class="cost-lbl">This Month</span><span class="cost-val" id="cost-month-2">$0.00</span></div>
+              <div class="cost-row"><span class="cost-lbl">Projected</span><span class="cost-val" id="cost-projected" style="color:var(--yellow)">$0.00</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS VIEW ── -->
+      <div class="dash-view" id="dash-view-settings">
+        <div class="dv-header">
+          <div class="dv-title">Settings</div>
+          <div class="dv-sub">SYSTEM CONFIGURATION</div>
+        </div>
+        <div class="dash-row dash-row-2">
+          <div class="d-card">
+            <div class="dc-title">API Keys</div>
+            <div class="dc-sub">PROVIDER CREDENTIALS</div>
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:4px">GROQ_API_KEY</div>
+                <input type="password" placeholder="gsk_••••••••" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'JetBrains Mono',monospace;outline:none">
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:4px">OPENROUTER_API_KEY</div>
+                <input type="password" placeholder="sk-or-••••••••" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'JetBrains Mono',monospace;outline:none">
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:4px">GEMINI_API_KEY</div>
+                <input type="password" placeholder="AIza••••••••" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'JetBrains Mono',monospace;outline:none">
+              </div>
+            </div>
+          </div>
+          <div class="d-card">
+            <div class="dc-title">Bot Settings</div>
+            <div class="dc-sub">DISCORD CONFIGURATION</div>
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+              <div class="cost-row"><span class="cost-lbl">Response delay</span><span class="cost-val">2–4s</span></div>
+              <div class="cost-row"><span class="cost-lbl">Max tokens</span><span class="cost-val">80</span></div>
+              <div class="cost-row"><span class="cost-lbl">Temperature</span><span class="cost-val">0.9</span></div>
+              <div class="cost-row"><span class="cost-lbl">History turns</span><span class="cost-val">6</span></div>
+              <div class="cost-row"><span class="cost-lbl">Last responses tracked</span><span class="cost-val">5</span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -765,6 +949,154 @@ function goPage(page) {
   if (page === 'workflow' && document.getElementById('wf-canvas-area').classList.contains('unlocked')) {
     setTimeout(drawWorkflow, 100);
   }
+}
+
+function showDashView(view) {
+  // Switch sidebar active state
+  document.querySelectorAll('.dash-sidebar .sidebar-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.view === view) item.classList.add('active');
+  });
+  // Switch view
+  document.querySelectorAll('.dash-view').forEach(v => v.classList.remove('dv-active'));
+  const target = document.getElementById('dash-view-' + view);
+  if (target) target.classList.add('dv-active');
+  // Render view-specific content
+  if (view === 'agents')    renderAgentsView();
+  if (view === 'pipeline')  renderPipelineView();
+  if (view === 'tasks')     renderTasksView();
+  if (view === 'chatlogs')  renderChatLogsView();
+  if (view === 'usage')     renderUsageView();
+  if (view === 'overview')  { renderPerfChart(); }
+}
+
+function renderAgentsView() {
+  const el = document.getElementById('agents-view-grid');
+  if (!el || el.innerHTML) return;
+  el.innerHTML = AGENTS.map(a => {
+    const d = agentData.find(x => x.id === a.id) || {};
+    const status = d.status || 'active';
+    const statusColor = status==='active'?'var(--green)':status==='busy'?'var(--orange)':'var(--text4)';
+    return `
+      <div class="agent-mini" onclick="openAgentChat('${a.id}');goPage('chat')">
+        <div class="am-orb" style="background:${a.color}18;border:1px solid ${a.color}33">${a.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="am-name">${a.name}</div>
+          <div class="am-model">${a.role} · ${a.model}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div class="am-status-dot" style="background:${statusColor};box-shadow:0 0 6px ${statusColor}"></div>
+          <span style="font-size:9px;color:${statusColor};font-family:'JetBrains Mono',monospace">${status.toUpperCase()}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderPipelineView() {
+  const el = document.getElementById('pip-flow-2');
+  if (!el) return;
+  const steps = pipelineData.steps || [
+    {emoji:'🔍',label:'Scrape',status:'done'},
+    {emoji:'🧠',label:'Match',status:'done'},
+    {emoji:'✍',label:'Tailor',status:'current'},
+    {emoji:'🔐',label:'Auth',status:'pending'},
+    {emoji:'📤',label:'Apply',status:'pending'},
+    {emoji:'📊',label:'Log',status:'pending'},
+  ];
+  el.innerHTML = steps.map((s,i) => `
+    ${i>0?`<div class="pip-arrow ${steps[i-1].status==='done'?'done-arrow':''}"></div>`:''}
+    <div class="pip-step">
+      <div class="pip-orb ${s.status}">${s.emoji}</div>
+      <div class="pip-lbl">${s.label}</div>
+    </div>`).join('');
+  const log = document.getElementById('pipeline-log');
+  if (log && !log.innerHTML) {
+    const entries = [
+      {icon:'✅',text:'Scrape completed — 47 jobs found',time:'10:32'},
+      {icon:'✅',text:'Match completed — 12 jobs scored 70+',time:'10:33'},
+      {icon:'⏳',text:'Tailor in progress — resume for Zepto',time:'10:35'},
+    ];
+    log.innerHTML = entries.map(e => `
+      <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:16px">${e.icon}</span>
+        <div style="flex:1;font-size:12px;color:var(--text2)">${e.text}</div>
+        <div style="font-size:10px;color:var(--text4);font-family:'JetBrains Mono',monospace">${e.time}</div>
+      </div>`).join('');
+  }
+}
+
+function renderTasksView() {
+  const el = document.getElementById('tasks-view-list');
+  if (!el || el.innerHTML) return;
+  const tasks = [
+    {agent:'ARIA',emoji:'🌐',color:'#00EAFF',task:'Orchestrate today\'s run',status:'active',pct:60},
+    {agent:'BLAZE',emoji:'🔥',color:'#FF8C42',task:'Export Figma brand kit',status:'busy',pct:40},
+    {agent:'ECHO',emoji:'🔊',color:'#EC4899',task:'Write 5 LinkedIn posts',status:'busy',pct:75},
+    {agent:'SAGE',emoji:'🌿',color:'#00FF94',task:'Research Zepto JD',status:'active',pct:90},
+    {agent:'VOID',emoji:'🕳',color:'#6366F1',task:'Push dashboard to GitHub',status:'active',pct:100},
+    {agent:'HEX',emoji:'💎',color:'#FCD34D',task:'Update applied_jobs.xlsx',status:'idle',pct:0},
+  ];
+  el.innerHTML = tasks.map(t => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="width:32px;height:32px;border-radius:9px;background:${t.color}18;border:1px solid ${t.color}33;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${t.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${t.task}</div>
+        <div class="prog-bar" style="height:4px"><div class="prog-fill" style="width:${t.pct}%"></div></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:9px;font-family:'JetBrains Mono',monospace;color:${t.color}">${t.agent}</div>
+        <div style="font-size:11px;color:var(--orange);font-family:'JetBrains Mono',monospace">${t.pct}%</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderChatLogsView() {
+  const el = document.getElementById('chatlogs-view-list');
+  if (!el || el.innerHTML) return;
+  const logs = [
+    {agent:'ARIA',emoji:'🌐',color:'#00EAFF',msg:'Pipeline started for today.',time:'10:30'},
+    {agent:'NOVA',emoji:'✦',color:'#A855F7',msg:'Bhai ye concept kaafi fresh hai, try karo.',time:'10:28'},
+    {agent:'BLAZE',emoji:'🔥',color:'#FF8C42',msg:'Figma file export ho gayi.',time:'10:25'},
+    {agent:'ECHO',emoji:'🔊',color:'#EC4899',msg:'Yaar 5 posts ready hain, check karo.',time:'10:20'},
+    {agent:'SAGE',emoji:'🌿',color:'#00FF94',msg:'Zepto ki JD analyze ki — match 82%.',time:'10:15'},
+  ];
+  el.innerHTML = logs.map(l => `
+    <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="width:28px;height:28px;border-radius:8px;background:${l.color}18;border:1px solid ${l.color}33;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${l.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:600;color:${l.color};font-family:'JetBrains Mono',monospace;margin-bottom:2px">${l.agent}</div>
+        <div style="font-size:12px;color:var(--text2)">${l.msg}</div>
+      </div>
+      <div style="font-size:9px;color:var(--text4);font-family:'JetBrains Mono',monospace;flex-shrink:0">${l.time}</div>
+    </div>`).join('');
+}
+
+function renderUsageView() {
+  const tb2 = document.getElementById('token-bars-2');
+  if (tb2 && !tb2.innerHTML) {
+    const bars = [
+      {lbl:'Groq',       val:45000, max:100000, col:'#00FF94'},
+      {lbl:'OpenRouter', val:28000, max:100000, col:'#FF8C42'},
+      {lbl:'Gemini',     val:12000, max:100000, col:'#A855F7'},
+      {lbl:'Claude',     val:8000,  max:100000, col:'#00EAFF'},
+    ];
+    tb2.innerHTML = bars.map(b => `
+      <div class="tb-row">
+        <span class="tb-lbl">${b.lbl}</span>
+        <div class="tb-bar"><div class="tb-fill" style="width:${Math.round(b.val/b.max*100)}%;background:linear-gradient(90deg,${b.col},${b.col}88)"></div></div>
+        <span class="tb-val">${(b.val/1000).toFixed(0)}K</span>
+      </div>`).join('');
+  }
+  const costDay = usageData.cost_today || 0.12;
+  const costMo  = usageData.cost_month || 3.48;
+  const el1 = document.getElementById('cost-today-2');
+  const el2 = document.getElementById('cost-month-2');
+  const el3 = document.getElementById('cost-week');
+  const el4 = document.getElementById('cost-projected');
+  if (el1) el1.textContent = '$' + costDay.toFixed(2);
+  if (el2) el2.textContent = '$' + costMo.toFixed(2);
+  if (el3) el3.textContent = '$' + (costDay * 7).toFixed(2);
+  if (el4) el4.textContent = '$' + (costDay * 30).toFixed(2);
 }
 
 /* ══════════════════════════════════════════
@@ -1458,12 +1790,19 @@ function sendUserMsg(text) {
     </div>`);
   msgsEl.scrollTop = msgsEl.scrollHeight;
 
-  // Call API
+  // Call API — force Hinglish system prompt for openrouter / dolphin model
   const model = document.getElementById('chat-model-select').value;
+  const hinglishSystem = `Tu ek desi AI agent hai Discord pe.\nHinglish mein bol — Hindi+English mix.\nSHORT — max 2 lines.\nCasual, friendly.\nNo markdown, no **bold**, no bullet points.\nJust talk like a desi friend.`;
+  const useHinglish = (model === 'openrouter' || model === 'dolphin');
   fetch('/api/chat', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({agent:agent.id, message:text, model}),
+    body: JSON.stringify({
+      agent: agent.id,
+      message: text,
+      model,
+      ...(useHinglish ? {system: hinglishSystem, provider: 'openrouter'} : {}),
+    }),
   })
   .then(r => r.json())
   .then(data => {

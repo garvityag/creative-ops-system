@@ -83,7 +83,7 @@ BOT_USER_IDS: set[int] = set()
 def _build_prompts(agent_id: str, message_text: str, context: str, is_owner: bool = False):
     p           = AGENT_PERSONALITIES[agent_id]
     personality = p["personality"]
-    last_resps  = AGENT_LAST_RESPONSES.get(agent_id, [])[-3:]
+    last_resps  = AGENT_LAST_RESPONSES.get(agent_id, [])[-5:]
 
     if is_owner:
         system = (
@@ -96,7 +96,8 @@ def _build_prompts(agent_id: str, message_text: str, context: str, is_owner: boo
             f"Hinglish mein bol — short 1-2 lines.\n"
             f"Apni personality: {personality}\n"
             f"IMPORTANT: Apna catchphrase har message mein MAT use kar. Vary kar.\n"
-            f"Teri last responses: {last_resps} — inhe REPEAT MAT KARNA."
+            f"Never repeat what you just said. Fresh response every time.\n"
+            f"Teri last 5 responses: {last_resps} — inhe REPEAT MAT KARNA, word-for-word copy bilkul nahi."
         )
     else:
         system = (
@@ -105,7 +106,8 @@ def _build_prompts(agent_id: str, message_text: str, context: str, is_owner: boo
             f"Hinglish mein bol — short 1-2 lines.\n"
             f"Kabhi @mention mat kar.\n"
             f"IMPORTANT: Apna catchphrase har message mein MAT use kar. Vary kar responses.\n"
-            f"Teri last responses: {last_resps} — inhe REPEAT MAT KARNA."
+            f"Never repeat what you just said. Fresh response every time.\n"
+            f"Teri last 5 responses: {last_resps} — inhe REPEAT MAT KARNA, word-for-word copy bilkul nahi."
         )
 
     user = f"Someone said: '{message_text}'."
@@ -116,9 +118,16 @@ def _build_prompts(agent_id: str, message_text: str, context: str, is_owner: boo
 
 
 def _clean(text: str) -> str:
-    text  = re.sub(r"@\w+", "", text).strip()
-    lines = [l.strip() for l in text.split("\n") if l.strip()]
-    text  = "\n".join(lines[:2])
+    text = re.sub(r"@\w+", "", text).strip()
+    # Deduplicate lines — strip repeated sentences in one response
+    seen: set[str] = set()
+    unique_lines: list[str] = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if stripped and stripped not in seen:
+            seen.add(stripped)
+            unique_lines.append(stripped)
+    text = "\n".join(unique_lines[:2])
     if len(text) > 200:
         text = text[:200].rsplit(" ", 1)[0]
     return text
@@ -206,7 +215,7 @@ async def generate_response(
                 CHANNEL_HISTORY[channel_id] = CHANNEL_HISTORY[channel_id][-12:]
             if cleaned:
                 AGENT_LAST_RESPONSES[agent_id].append(cleaned)
-                AGENT_LAST_RESPONSES[agent_id] = AGENT_LAST_RESPONSES[agent_id][-3:]
+                AGENT_LAST_RESPONSES[agent_id] = AGENT_LAST_RESPONSES[agent_id][-5:]
             return cleaned
 
     print(f"[{tag}] All providers failed — staying silent")
