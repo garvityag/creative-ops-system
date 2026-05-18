@@ -13,16 +13,22 @@ import discord
 import httpx
 from dotenv import load_dotenv
 
-from agent_personalities import AGENT_PERSONALITIES, GENERIC_HINGLISH_REACTIONS
+from agent_personalities import AGENT_PERSONALITIES
 from conversation_engine import ConversationOrchestrator, build_system_prompt, call_ollama
 from game_engine import GameEngine
 
 load_dotenv()
 
-GUILD_ID       = int(os.getenv("DISCORD_GUILD_ID", "0"))
-GROQ_API_KEY   = os.getenv("GROQ_API_KEY", "")
-GROQ_URL       = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL     = "llama-3.3-70b-versatile"
+GUILD_ID             = int(os.getenv("DISCORD_GUILD_ID", "0"))
+GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "")
+OPENROUTER_API_KEY   = os.getenv("OPENROUTER_API_KEY", "")
+GEMINI_API_KEY       = os.getenv("GEMINI_API_KEY", "")
+
+GROQ_URL             = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL           = "llama-3.3-70b-versatile"
+OPENROUTER_URL       = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODEL     = "meta-llama/llama-3.3-70b-instruct"
+GEMINI_URL           = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent"
 
 # Ordered list — used for deterministic bot selection via message.id % 9
 AGENT_NAMES: list[str] = list(AGENT_PERSONALITIES.keys())
@@ -50,15 +56,11 @@ HANDLED_MESSAGES: set[int] = set()
 BOT_USER_IDS: set[int] = set()
 
 
-# ── Groq Response Generator ────────────────────────────────────────────────────
+# ── AI Response Generator — Groq → OpenRouter → Gemini → silence ──────────────
 
-async def generate_response(agent_id: str, message_text: str, context: str = "") -> str:
-    """Call Groq with agent personality. Returns short Hinglish reply."""
-    if not GROQ_API_KEY:
-        return random.choice(GENERIC_HINGLISH_REACTIONS)
-
-    p    = AGENT_PERSONALITIES[agent_id]
-    name = p["name"]
+def _build_prompts(agent_id: str, message_text: str, context: str):
+    p            = AGENT_PERSONALITIES[agent_id]
+    name         = p["name"]
     personality  = p["personality"]
     catchphrases = "; ".join(p.get("catchphrases", [])[:3])
 
@@ -88,47 +90,84 @@ GOOD RESPONSE EXAMPLES:
 "bhai haan haan, main bhi yahi soch rha tha"
 "nahi yaar ye galat hai"
 """
-
-    user_content = f"Someone said: '{message_text}'."
+    user = f"Someone said: '{message_text}'."
     if context:
-        user_content = f"{context}\n\n{user_content}"
-    user_content += f" Tu {name} ki tarah respond kar. MAX 2 lines. Hinglish only."
+        user = f"{context}\n\n{user}"
+    user += f" Tu {name} ki tarah respond kar. MAX 2 lines. Hinglish only."
+    return system, user
 
+
+def _clean(text: str) -> str:
+    text  = re.sub(r"@\w+", "", text).strip()
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    text  = "\n".join(lines[:2])
+    if len(text) > 200:
+        text = text[:200].rsplit(" ", 1)[0]
+    return text
+
+
+async def _call_openai_compat(url: str, key: str, model: str,
+                               system: str, user: str, tag: str) -> str:
     payload = {
-        "model": GROQ_MODEL,
+        "model": model,
         "messages": [
             {"role": "system", "content": system},
-            {"role": "user",   "content": user_content},
+            {"role": "user",   "content": user},
         ],
         "max_tokens": 80,
         "temperature": 0.9,
     }
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json",
-    }
-
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.post(GROQ_URL, headers=headers, json=payload, timeout=10)
+            r = await client.post(url, headers=headers, json=payload, timeout=10)
             r.raise_for_status()
-            text = r.json()["choices"][0]["message"]["content"].strip()
+            return r.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"[GROQ/{agent_id}] {e}")
-        return random.choice(GENERIC_HINGLISH_REACTIONS)
+        print(f"[{tag}] {type(e).__name__}: {e}")
+        return ""
 
-    # Strip @mentions
-    text = re.sub(r"@\w+", "", text).strip()
 
-    # Enforce 2-line max
-    lines = [l.strip() for l in text.split("\n") if l.strip()]
-    text  = "\n".join(lines[:2])
+async def _call_gemini(system: str, user: str, tag: str) -> str:
+    payload = {
+        "contents": [{"parts": [{"text": f"{system}\n\n{user}"}]}],
+        "generationConfig": {"maxOutputTokens": 80, "temperature": 0.9},
+    }
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+                json=payload, timeout=10,
+            )
+            r.raise_for_status()
+            return r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception as e:
+        print(f"[{tag}] {type(e).__name__}: {e}")
+        return ""
 
-    # Hard 200-char cap
-    if len(text) > 200:
-        text = text[:200].rsplit(" ", 1)[0]
 
-    return text or random.choice(GENERIC_HINGLISH_REACTIONS)
+async def generate_response(agent_id: str, message_text: str, context: str = "") -> str:
+    """Try Groq → OpenRouter → Gemini. Return empty string if all fail (stay silent)."""
+    system, user = _build_prompts(agent_id, message_text, context)
+    tag = agent_id.upper()
+
+    if GROQ_API_KEY:
+        text = await _call_openai_compat(GROQ_URL, GROQ_API_KEY, GROQ_MODEL, system, user, f"GROQ/{tag}")
+        if text:
+            return _clean(text)
+
+    if OPENROUTER_API_KEY:
+        text = await _call_openai_compat(OPENROUTER_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, system, user, f"OR/{tag}")
+        if text:
+            return _clean(text)
+
+    if GEMINI_API_KEY:
+        text = await _call_gemini(system, user, f"GEMINI/{tag}")
+        if text:
+            return _clean(text)
+
+    print(f"[{tag}] All providers failed — staying silent")
+    return ""
 
 
 # ── Per-bot send helper ────────────────────────────────────────────────────────
@@ -209,6 +248,8 @@ async def handle_message(
         await asyncio.sleep(random.uniform(1.5, 3.0))
         async with message.channel.typing():
             response = await generate_response(this_agent_id, message.content)
+        if not response:
+            return
         await message.channel.send(response)
         print(f"[{this_agent_id.upper()}] ← mentioned, responded")
 
@@ -222,8 +263,9 @@ async def handle_message(
                 second = random.choice(others)
                 context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
                 second_resp = await generate_response(second, message.content, context)
-                await send_as_bot(second, channel_name, second_resp, orchestrator)
-                print(f"[{second.upper()}] ← second responder (mention path)")
+                if second_resp:
+                    await send_as_bot(second, channel_name, second_resp, orchestrator)
+                    print(f"[{second.upper()}] ← second responder (mention path)")
         return
 
     # ── PATH B: no specific mention ───────────────────────────────────────────
@@ -249,6 +291,8 @@ async def handle_message(
     await asyncio.sleep(random.uniform(2.0, 4.0))
     async with message.channel.typing():
         response = await generate_response(this_agent_id, message.content)
+    if not response:
+        return
     await message.channel.send(response)
     print(f"[{this_agent_id.upper()}] ← no-mention path, responded")
 
@@ -262,8 +306,9 @@ async def handle_message(
             second = random.choice(others)
             context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
             second_resp = await generate_response(second, message.content, context)
-            await send_as_bot(second, channel_name, second_resp, orchestrator)
-            print(f"[{second.upper()}] ← second responder (no-mention path)")
+            if second_resp:
+                await send_as_bot(second, channel_name, second_resp, orchestrator)
+                print(f"[{second.upper()}] ← second responder (no-mention path)")
 
 
 # ── Agent Bot Client ───────────────────────────────────────────────────────────
@@ -399,8 +444,11 @@ async def main():
     print("║   Groq • Short Hinglish • No Loops   ║")
     print("╚══════════════════════════════════════╝\n")
 
-    if not GROQ_API_KEY:
-        print("[WARN] GROQ_API_KEY not set — using fallback responses\n")
+    active_providers = [k for k, v in [("Groq", GROQ_API_KEY), ("OpenRouter", OPENROUTER_API_KEY), ("Gemini", GEMINI_API_KEY)] if v]
+    if active_providers:
+        print(f"[AI] Providers: {' → '.join(active_providers)}\n")
+    else:
+        print("[WARN] No AI providers configured — bots will stay silent on all failures\n")
 
     bot_tasks = []
     launched  = 0
