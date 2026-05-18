@@ -46,6 +46,9 @@ RANDOM_THOUGHT_INTERVAL = 2 * 3600
 # Safety dedup — only used in the no-mention path
 HANDLED_MESSAGES: set[int] = set()
 
+# All 9 bot user IDs — populated in on_ready, checked before any response
+BOT_USER_IDS: set[int] = set()
+
 
 # ── Groq Response Generator ────────────────────────────────────────────────────
 
@@ -181,11 +184,10 @@ async def handle_message(
       • HANDLED_MESSAGES used as safety net against duplicates
       • 70% chance that bot responds, 35% chance second agent joins
     """
-    if message.author.bot:
+    if message.author.id in BOT_USER_IDS:
         return
     if message.channel.name not in RESPOND_CHANNELS:
         return
-
     msg_lower = message.content.lower()
 
     # Detect if a specific agent is name-dropped
@@ -282,6 +284,7 @@ class AgentBot(discord.Client):
     async def on_ready(self):
         name = self.config["name"]
         print(f"  [{name:6}] ✓  {self.user} ({self.user.id})")
+        BOT_USER_IDS.add(self.user.id)
         self.orchestrator.register_bot(self.agent_id, self)
         if self.agent_id == "aria":
             guild = self.get_guild(GUILD_ID)
@@ -289,7 +292,9 @@ class AgentBot(discord.Client):
                 await self._ensure_channels(guild)
 
     async def on_message(self, message: discord.Message):
-        # Single entry point — all logic lives in handle_message()
+        if message.author.id in BOT_USER_IDS:
+            return
+        print(f"Human message from {message.author}: {message.content}")
         await handle_message(message, self.agent_id, self.orchestrator)
 
     async def _ensure_channels(self, guild: discord.Guild):
