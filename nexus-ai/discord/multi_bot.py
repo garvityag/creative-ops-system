@@ -12,7 +12,7 @@ import random
 import discord
 from dotenv import load_dotenv
 
-from agent_personalities import AGENT_PERSONALITIES, GENERIC_HINGLISH_REACTIONS
+from agent_personalities import AGENT_PERSONALITIES, GENERIC_HINGLISH_REACTIONS, GAALI_PROMPT_SUFFIX
 from conversation_engine import ConversationOrchestrator, build_system_prompt, call_ollama
 from game_engine import GameEngine
 
@@ -80,12 +80,12 @@ async def handle_chat_message(orchestrator: ConversationOrchestrator, message: d
     # ── First responder ───────────────────────────────────────────────────────
     await asyncio.sleep(random.uniform(2.0, 5.0))
 
-    system = build_system_prompt(first)
+    system = build_system_prompt(first) + GAALI_PROMPT_SUFFIX
     prompt = (
         f"Someone just said in the group chat: '{message.content}'\n"
         f"React naturally in 1-2 sentences. Hinglish. Stay in character."
     )
-    response = await call_ollama(system, prompt) or random.choice(GENERIC_HINGLISH_REACTIONS)
+    response = await call_ollama(system, prompt, model="tinydolphin") or random.choice(GENERIC_HINGLISH_REACTIONS)
     await orchestrator._send_as(first, message.channel, response)
 
     # ── Second responder (40% chance) ────────────────────────────────────────
@@ -97,14 +97,14 @@ async def handle_chat_message(orchestrator: ConversationOrchestrator, message: d
             return
         second = random.choice(others)
 
-        system2 = build_system_prompt(second)
+        system2 = build_system_prompt(second) + GAALI_PROMPT_SUFFIX
         prompt2 = (
             f"In the group chat:\n"
             f"Someone said: '{message.content}'\n"
             f"{first.upper()} just replied: '{response}'\n\n"
             f"Add your reaction. 1 sentence max. Hinglish. In character."
         )
-        response2 = await call_ollama(system2, prompt2) or random.choice(GENERIC_HINGLISH_REACTIONS)
+        response2 = await call_ollama(system2, prompt2, model="tinydolphin") or random.choice(GENERIC_HINGLISH_REACTIONS)
         await orchestrator._send_as(second, message.channel, response2)
 
 

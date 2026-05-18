@@ -16,10 +16,11 @@ from agent_personalities import (
     DESIGN_TECH_DEBATES,
     INSIDE_JOKES,
     GENERIC_HINGLISH_REACTIONS,
+    GAALI_PROMPT_SUFFIX,
 )
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("DEFAULT_LOCAL_MODEL", "phi3:mini")
+OLLAMA_MODEL = "tinydolphin"
 
 MIN_BOTS_TO_START = 3
 SESSION_DURATION_MIN = 15 * 60   # 15 minutes in seconds
@@ -93,7 +94,8 @@ STRICT RULES — NEVER BREAK:
 9. Occasional typos make it real: "kya bol rha h" instead of "kya bol raha hai"
 10. Never start with "I" — start with "bhai", "yaar", "haan", "nahi", etc
 
-REMEMBER: You're a desi friend who happens to be an AI agent. Act like it."""
+REMEMBER: You're a desi friend who happens to be an AI agent. Act like it.
+{GAALI_PROMPT_SUFFIX}"""
 
 
 def get_fallback_line(agent_id: str) -> str:
