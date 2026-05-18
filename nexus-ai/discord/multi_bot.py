@@ -20,6 +20,8 @@ from game_engine import GameEngine
 
 load_dotenv()
 
+OWNER_NAMES: set[str] = {'garvit yaggik', 'garvit', 'garv', 'devilgy'}
+
 GUILD_ID             = int(os.getenv("DISCORD_GUILD_ID", "0"))
 _owner_raw           = os.getenv("DISCORD_OWNER_ID", "0")
 DISCORD_OWNER_ID     = int(_owner_raw) if _owner_raw.isdigit() else 0
@@ -47,6 +49,12 @@ WORK_KEYWORDS = {
 # Ordered list — used for deterministic bot selection via message.id % 9
 AGENT_NAMES: list[str] = list(AGENT_PERSONALITIES.keys())
 
+# Per-agent last 3 responses — injected into system prompt to prevent repetition
+AGENT_LAST_RESPONSES: dict[str, list[str]] = {aid: [] for aid in AGENT_NAMES}
+
+# Per-channel conversation history — last 6 turns passed to API
+CHANNEL_HISTORY: dict[int, list[dict]] = {}
+
 REQUIRED_CHANNELS = [
     ("agent-chat",   "Main hangout — agents chill here"),
     ("task-logs",    "Work updates and task completions"),
@@ -73,50 +81,37 @@ BOT_USER_IDS: set[int] = set()
 # ── AI Response Generator — Groq → OpenRouter → Gemini → silence ──────────────
 
 def _build_prompts(agent_id: str, message_text: str, context: str, is_owner: bool = False):
-    p            = AGENT_PERSONALITIES[agent_id]
-    name         = p["name"]
-    personality  = p["personality"]
-    catchphrases = "; ".join(p.get("catchphrases", [])[:3])
+    p           = AGENT_PERSONALITIES[agent_id]
+    personality = p["personality"]
+    last_resps  = AGENT_LAST_RESPONSES.get(agent_id, [])[-3:]
 
-    owner_block = """
-OWNER MESSAGE — SPECIAL RULES:
-- Ye message Garv bhai ka hai — woh is server ka creator/boss hai
-- Use ko "Garv bhai" ya "boss" bol — casual lekin respectful
-- Gaaliyan BILKUL mat use karna uske saath
-- Agar woh joke kare toh joke back kar freely
-- Agar woh koi kaam bole toh seriously le aur confirm kar
-""" if is_owner else ""
+    if is_owner:
+        system = (
+            f"Tu {agent_id.upper()} hai — Garv ka AI agent.\n"
+            f"Garv tera FOUNDER aur BOSS hai.\n"
+            f"Usse 'Garv bhai' ya 'boss' keh.\n"
+            f"Agar wo kaam deta hai to seriously le, actually help kar.\n"
+            f"Agar wo mazak karta hai to tu bhi mazak kar.\n"
+            f"Usse KABHI gaaliyan mat de.\n"
+            f"Hinglish mein bol — short 1-2 lines.\n"
+            f"Apni personality: {personality}\n"
+            f"IMPORTANT: Apna catchphrase har message mein MAT use kar. Vary kar.\n"
+            f"Teri last responses: {last_resps} — inhe REPEAT MAT KARNA."
+        )
+    else:
+        system = (
+            f"Tu {agent_id.upper()} hai — desi AI agent.\n"
+            f"Apni personality: {personality}\n"
+            f"Hinglish mein bol — short 1-2 lines.\n"
+            f"Kabhi @mention mat kar.\n"
+            f"IMPORTANT: Apna catchphrase har message mein MAT use kar. Vary kar responses.\n"
+            f"Teri last responses: {last_resps} — inhe REPEAT MAT KARNA."
+        )
 
-    system = f"""Tu {name} hai. Desi AI agent. Discord pe dosto se baat kar raha hai.
-
-PERSONALITY: {personality}
-
-TERI CATCHPHRASES (kabhi kabhi use kar): {catchphrases}
-{owner_block}
-STRICT RULES — EK BHI MAT TODNA:
-- SIRF Hinglish mein bol (Hindi+English mix) HAMESHA
-- MAX 2 lines. KABHI zyada nahi. Seriously.
-- WhatsApp style — casual, short, real
-- Kabhi bhi @mention mat kar kisi ko — kabhi nahi
-- Kabhi essay mat likh — 2 lines maximum
-- Gaaliyan natural use kar (bc, bhosdike, chutiya) — har sentence mein nahi, sirf kabhi kabhi
-- Emojis kabhi kabhi use kar (😂 💀 🔥 😭) — overdose mat kar
-- Sound like desi friend chatting, NOT like AI assistant
-- Previous context se relate kar agar hai toh
-
-GOOD RESPONSE EXAMPLES:
-"yaar kya bol rha hai bc 😂"
-"bhai sahi pakda tune"
-"arey nahi yaar, lekin point hai tera"
-"💀 ye kya tha"
-"haha bhosdike seriously? 😂"
-"bhai haan haan, main bhi yahi soch rha tha"
-"nahi yaar ye galat hai"
-"""
     user = f"Someone said: '{message_text}'."
     if context:
         user = f"{context}\n\n{user}"
-    user += f" Tu {name} ki tarah respond kar. MAX 2 lines. Hinglish only."
+    user += f" Tu {agent_id.upper()} ki tarah respond kar. MAX 2 lines. Hinglish only."
     return system, user
 
 
@@ -130,13 +125,15 @@ def _clean(text: str) -> str:
 
 
 async def _call_openai_compat(url: str, key: str, model: str,
-                               system: str, user: str, tag: str) -> str:
+                               system: str, user: str, tag: str,
+                               history: list[dict] | None = None) -> str:
+    messages = [{"role": "system", "content": system}]
+    if history:
+        messages.extend(history[-6:])
+    messages.append({"role": "user", "content": user})
     payload = {
         "model": model,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user",   "content": user},
-        ],
+        "messages": messages,
         "max_tokens": 80,
         "temperature": 0.9,
     }
@@ -178,14 +175,21 @@ async def generate_response(
 ) -> str:
     """Try providers in order (respecting per-channel model override). Silence on total failure."""
     system, user = _build_prompts(agent_id, message_text, context, is_owner)
-    tag = agent_id.upper()
+    tag      = agent_id.upper()
+    history  = CHANNEL_HISTORY.get(channel_id)
+
+    # Update history with incoming user message
+    if channel_id:
+        hist = CHANNEL_HISTORY.setdefault(channel_id, [])
+        hist.append({"role": "user", "content": message_text})
+        CHANNEL_HISTORY[channel_id] = hist[-12:]  # keep last 12 turns (6 pairs)
 
     # Build provider order — selected model goes first
     selected = SELECTED_MODEL.get(channel_id)
     all_providers = [
-        ("groq",        GROQ_API_KEY,       lambda s, u: _call_openai_compat(GROQ_URL, GROQ_API_KEY, GROQ_MODEL, s, u, f"GROQ/{tag}")),
-        ("openrouter",  OPENROUTER_API_KEY,  lambda s, u: _call_openai_compat(OPENROUTER_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, s, u, f"OR/{tag}")),
-        ("gemini",      GEMINI_API_KEY,      lambda s, u: _call_gemini(s, u, f"GEMINI/{tag}")),
+        ("groq",       GROQ_API_KEY,      lambda s, u: _call_openai_compat(GROQ_URL, GROQ_API_KEY, GROQ_MODEL, s, u, f"GROQ/{tag}", history)),
+        ("openrouter", OPENROUTER_API_KEY, lambda s, u: _call_openai_compat(OPENROUTER_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, s, u, f"OR/{tag}", history)),
+        ("gemini",     GEMINI_API_KEY,     lambda s, u: _call_gemini(s, u, f"GEMINI/{tag}")),
     ]
     if selected:
         all_providers.sort(key=lambda p: p[0] != selected)
@@ -195,7 +199,15 @@ async def generate_response(
             continue
         text = await call(system, user)
         if text:
-            return _clean(text)
+            cleaned = _clean(text)
+            # Record response in history and last-responses tracker
+            if channel_id and cleaned:
+                CHANNEL_HISTORY[channel_id].append({"role": "assistant", "content": cleaned})
+                CHANNEL_HISTORY[channel_id] = CHANNEL_HISTORY[channel_id][-12:]
+            if cleaned:
+                AGENT_LAST_RESPONSES[agent_id].append(cleaned)
+                AGENT_LAST_RESPONSES[agent_id] = AGENT_LAST_RESPONSES[agent_id][-3:]
+            return cleaned
 
     print(f"[{tag}] All providers failed — staying silent")
     return ""
@@ -314,21 +326,31 @@ async def handle_message(
       • HANDLED_MESSAGES used as safety net against duplicates
       • 70% chance that bot responds, 35% chance second agent joins
     """
+    # FIX 1: Strip @everyone / @here before ANY processing
+    message_content = message.content.replace('@everyone', '').replace('@here', '').strip()
+
     if message.author.id in BOT_USER_IDS:
         return
     if message.channel.name not in RESPOND_CHANNELS:
         return
 
-    is_owner     = bool(DISCORD_OWNER_ID and message.author.id == DISCORD_OWNER_ID)
+    # FIX 2: Owner detection by name list as well as ID
+    display = message.author.display_name.lower()
+    uname   = message.author.name.lower()
+    is_owner = (
+        bool(DISCORD_OWNER_ID and message.author.id == DISCORD_OWNER_ID)
+        or display in OWNER_NAMES
+        or uname in OWNER_NAMES
+    )
     channel_id   = message.channel.id
     channel_name = message.channel.name
-    msg_lower    = message.content.lower()
+    msg_lower    = message_content.lower()
 
     # ── /model command — one bot handles it ──────────────────────────────────
-    if message.content.startswith("/model "):
+    if message_content.startswith("/model "):
         if message.id % len(AGENT_NAMES) != AGENT_NAMES.index(this_agent_id):
             return
-        parts = message.content.split()
+        parts = message_content.split()
         model = parts[1].lower() if len(parts) > 1 else ""
         if model in ("groq", "openrouter", "gemini"):
             SELECTED_MODEL[channel_id] = model
@@ -353,14 +375,13 @@ async def handle_message(
     if is_owner and any(kw in msg_lower for kw in WORK_KEYWORDS):
         if message.id % len(AGENT_NAMES) == AGENT_NAMES.index(this_agent_id):
             async with message.channel.typing():
-                result = await call_task_api(message.content, this_agent_id)
+                result = await call_task_api(message_content, this_agent_id)
             if result:
                 await message.channel.send(result)
                 print(f"[{this_agent_id.upper()}] ← owner task executed")
                 return
             # Task API failed — fall through to normal conversation
 
-    # Detect if a specific agent is name-dropped
     mentioned = next(
         (aid for aid in AGENT_NAMES
          if aid in msg_lower
@@ -377,7 +398,7 @@ async def handle_message(
         await asyncio.sleep(random.uniform(1.5, 3.0))
         async with message.channel.typing():
             response = await generate_response(
-                this_agent_id, message.content,
+                this_agent_id, message_content,
                 is_owner=is_owner, channel_id=channel_id,
             )
         if not response:
@@ -395,7 +416,7 @@ async def handle_message(
                 second = random.choice(others)
                 context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
                 second_resp = await generate_response(
-                    second, message.content, context,
+                    second, message_content, context,
                     is_owner=is_owner, channel_id=channel_id,
                 )
                 if second_resp:
@@ -426,7 +447,7 @@ async def handle_message(
     await asyncio.sleep(random.uniform(2.0, 4.0))
     async with message.channel.typing():
         response = await generate_response(
-            this_agent_id, message.content,
+            this_agent_id, message_content,
             is_owner=is_owner, channel_id=channel_id,
         )
     if not response:
@@ -444,7 +465,7 @@ async def handle_message(
             second = random.choice(others)
             context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
             second_resp = await generate_response(
-                second, message.content, context,
+                second, message_content, context,
                 is_owner=is_owner, channel_id=channel_id,
             )
             if second_resp:
@@ -478,9 +499,10 @@ class AgentBot(discord.Client):
                 await self._ensure_channels(guild)
 
     async def on_message(self, message: discord.Message):
+        message_content = message.content.replace('@everyone', '').replace('@here', '').strip()
         if message.author.id in BOT_USER_IDS:
             return
-        print(f"Human message from {message.author}: {message.content}")
+        print(f"Human message from {message.author}: {message_content}")
         await handle_message(message, self.agent_id, self.orchestrator)
 
     async def _ensure_channels(self, guild: discord.Guild):
