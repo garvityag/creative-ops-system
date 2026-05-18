@@ -21,7 +21,8 @@ from game_engine import GameEngine
 load_dotenv()
 
 GUILD_ID             = int(os.getenv("DISCORD_GUILD_ID", "0"))
-DISCORD_OWNER_ID     = int(os.getenv("DISCORD_OWNER_ID", "0"))
+_owner_raw           = os.getenv("DISCORD_OWNER_ID", "0")
+DISCORD_OWNER_ID     = int(_owner_raw) if _owner_raw.isdigit() else 0
 GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "")
 OPENROUTER_API_KEY   = os.getenv("OPENROUTER_API_KEY", "")
 GEMINI_API_KEY       = os.getenv("GEMINI_API_KEY", "")
