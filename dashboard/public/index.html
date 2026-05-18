@@ -635,7 +635,11 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
 
         <!-- Agent selector -->
         <div class="card" style="padding:16px">
-          <div style="font-size:9px;color:var(--text3);letter-spacing:0.2em;margin-bottom:12px;font-family:'JetBrains Mono',monospace">SELECT AGENT</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:9px;color:var(--text3);letter-spacing:0.2em;font-family:'JetBrains Mono',monospace">SELECT AGENT</div>
+            <button id="group-toggle" onclick="toggleGroupMode()" style="font-size:8px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text3);font-family:'JetBrains Mono',monospace;cursor:pointer;letter-spacing:0.05em">GROUP</button>
+          </div>
+          <button onclick="runDebate()" style="width:100%;margin-bottom:8px;font-size:9px;padding:5px;border-radius:8px;border:1px solid rgba(168,85,247,0.3);background:rgba(168,85,247,0.05);color:var(--neon-purple);font-family:'JetBrains Mono',monospace;cursor:pointer;letter-spacing:0.1em">☢ DEBATE ALL 9</button>
           <div id="chat-agent-list" style="display:flex;flex-direction:column;gap:6px"></div>
         </div>
 
@@ -1259,6 +1263,8 @@ let chatModel = null;
 let chatHistory = [];
 let chatMsgCount = 0;
 let chatTokens = 0;
+let groupMode = false;
+let groupAgents = [];
 
 const MODEL_COSTS = {
   'dolphin-mixtral':0.0005,'mythomax':0.0002,'nous-hermes':0.0003,'openhermes':0.0001,
@@ -1313,13 +1319,24 @@ function filterModels(provider, btn) {
 // ── CHAT ──
 function renderChatAgents() {
   if (!state) return;
-  document.getElementById('chat-agent-list').innerHTML = Object.values(state.agents).map(a => `
-    <button class="chat-agent-btn ${chatAgent===a.id?'sel':''}" style="--ac:${a.color}" onclick="selectChatAgent('${a.id}')">
-      <div class="cab-icon" style="background:linear-gradient(135deg,${a.color},${a.color}60);color:white">${a.emoji}</div>
+  document.getElementById('chat-agent-list').innerHTML = Object.values(state.agents).map(a => {
+    const inGroup = groupAgents.includes(a.id);
+    const isSel = groupMode ? inGroup : chatAgent === a.id;
+    const icon = groupMode ? (inGroup ? '✓' : a.emoji) : a.emoji;
+    const handler = groupMode ? `toggleGroupAgent('${a.id}')` : `selectChatAgent('${a.id}')`;
+    return `
+    <button class="chat-agent-btn ${isSel?'sel':''}" style="--ac:${a.color}" onclick="${handler}">
+      <div class="cab-icon" style="background:linear-gradient(135deg,${a.color},${a.color}60);color:white">${icon}</div>
       <div class="cab-name" style="font-size:11px">${a.name}</div>
       <div class="cab-status" style="background:${a.status==='offline'?'var(--text4)':'var(--neon-green)'};box-shadow:${a.status!=='offline'?`0 0 6px var(--neon-green)`:'none'}"></div>
-    </button>
-  `).join('');
+    </button>`;
+  }).join('');
+  const btn = document.getElementById('group-toggle');
+  if (btn) {
+    btn.style.background = groupMode ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.03)';
+    btn.style.borderColor = groupMode ? 'var(--neon-purple)' : 'var(--border)';
+    btn.style.color = groupMode ? 'var(--neon-purple)' : 'var(--text3)';
+  }
 }
 
 function selectChatAgent(id) {
@@ -1346,12 +1363,85 @@ function selectChatModel(btn) {
 
 function updateChatStatus() {
   const pill = document.getElementById('chat-status-pill');
-  if (chatAgent && chatModel) {
+  const ready = groupMode ? groupAgents.length > 0 : !!chatAgent;
+  if (ready && chatModel) {
     pill.textContent = 'READY';
     pill.style.background = 'rgba(0,255,148,0.08)';
     pill.style.borderColor = 'rgba(0,255,148,0.25)';
     pill.style.color = 'var(--neon-green)';
   }
+}
+
+function toggleGroupMode() {
+  groupMode = !groupMode;
+  groupAgents = [];
+  if (groupMode) {
+    document.getElementById('chat-agent-name').textContent = 'Group Chat';
+    document.getElementById('chat-agent-orb').textContent = '◈';
+    document.getElementById('chat-agent-orb').style.background = 'linear-gradient(135deg,#A855F7,#EC4899)';
+    document.getElementById('chat-status-pill').textContent = 'OFFLINE';
+    document.getElementById('chat-status-pill').style.cssText = '';
+  }
+  renderChatAgents();
+}
+
+function toggleGroupAgent(id) {
+  const idx = groupAgents.indexOf(id);
+  if (idx === -1) groupAgents.push(id); else groupAgents.splice(idx, 1);
+  const count = groupAgents.length;
+  document.getElementById('chat-agent-name').textContent = count ? `Group (${count} agents)` : 'Group Chat';
+  updateChatStatus();
+  renderChatAgents();
+}
+
+async function runDebate() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) { alert('Enter a topic to debate first!'); return; }
+  if (!chatModel) { alert('Select a model first!'); return; }
+  input.value = '';
+  addMessage('user', `☢️ DEBATE: ${text}`, null);
+  const btn = document.querySelector('[onclick="runDebate()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ DEBATING...'; }
+  const agentIds = Object.keys(state?.agents || {});
+  for (const agentId of agentIds) {
+    showTypingFor(agentId);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agent_id: agentId,
+          message: `Give your honest 1-2 sentence opinion on this topic from your perspective: ${text}`,
+          model: chatModel, history: [],
+        })
+      });
+      const data = await res.json();
+      removeTypingFor(agentId);
+      if (res.ok) addMessage('agent', data.response || 'No opinion.', agentId);
+    } catch(e) { removeTypingFor(agentId); }
+    await new Promise(r => setTimeout(r, 800));
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '☢ DEBATE ALL 9'; }
+}
+
+function showTypingFor(agentId) {
+  const msgs = document.getElementById('chat-messages');
+  const empty = msgs.querySelector('div[style*="text-align:center"]');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'chat-msg agent';
+  div.id = 'typing-' + agentId;
+  const a = state?.agents[agentId];
+  div.innerHTML = `
+    <div class="msg-avatar" style="background:${a?`linear-gradient(135deg,${a.color},${a.color}60)`:'#333'};color:white">${a?.emoji||'?'}</div>
+    <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTypingFor(agentId) {
+  document.getElementById('typing-' + agentId)?.remove();
 }
 
 function addMessage(role, text, agentId) {
@@ -1410,8 +1500,34 @@ async function sendChat() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
-  if (!chatAgent) { alert('Select an agent first!'); return; }
   if (!chatModel) { alert('Select a model first!'); return; }
+
+  if (groupMode) {
+    if (groupAgents.length === 0) { alert('Select at least one agent in group mode!'); return; }
+    input.value = '';
+    addMessage('user', text, null);
+    chatHistory.push({ role:'user', content: text });
+    for (const agentId of groupAgents) {
+      showTypingFor(agentId);
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agent_id: agentId, message: text, model: chatModel, history: chatHistory.slice(-6) })
+        });
+        const data = await res.json();
+        removeTypingFor(agentId);
+        if (res.ok) {
+          const response = data.response || data.content || 'No response';
+          addMessage('agent', response, agentId);
+          chatHistory.push({ role:'assistant', content: `${state?.agents[agentId]?.name||agentId}: ${response}` });
+        }
+      } catch(e) { removeTypingFor(agentId); addMessage('agent', '⚠️ ' + e.message, agentId); }
+      await new Promise(r => setTimeout(r, 800));
+    }
+    return;
+  }
+
+  if (!chatAgent) { alert('Select an agent first!'); return; }
 
   input.value = '';
   addMessage('user', text, chatAgent);
