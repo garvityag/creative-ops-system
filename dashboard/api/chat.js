@@ -29,11 +29,21 @@ const MODEL_ROUTES = {
   // Groq
   'groq':                       { provider: 'groq',        model_id: 'mixtral-8x7b-32768' },
   'groq/mixtral':               { provider: 'groq',        model_id: 'mixtral-8x7b-32768' },
-  'groq/llama3':                { provider: 'groq',        model_id: 'llama3-8b-8192' },
+  'groq/llama3':                { provider: 'groq',        model_id: 'llama-3.3-70b-versatile' },
+  // Groq — frontend aliases
+  'llama3-groq':                { provider: 'groq',        model_id: 'llama-3.3-70b-versatile' },
+  'mixtral-groq':               { provider: 'groq',        model_id: 'mixtral-8x7b-32768' },
+  // OpenRouter — frontend aliases
+  'dolphin-mixtral':            { provider: 'openrouter',  model_id: 'cognitivecomputations/dolphin-mixtral-8x7b' },
+  'mythomax':                   { provider: 'openrouter',  model_id: 'Gryphe/MythoMax-L2-13b' },
+  'nous-hermes':                { provider: 'openrouter',  model_id: 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO' },
   // Ollama (local only — only works if caller is local)
   'ollama':                     { provider: 'ollama',      model_id: 'phi3:mini' },
   'ollama/phi3':                { provider: 'ollama',      model_id: 'phi3:mini' },
   'ollama/tinydolphin':         { provider: 'ollama',      model_id: 'tinydolphin' },
+  // Ollama — frontend aliases
+  'tinydolphin':                { provider: 'ollama',      model_id: 'tinydolphin' },
+  'phi3-mini':                  { provider: 'ollama',      model_id: 'phi3:mini' },
 };
 
 // Cost per 1k tokens (input/output)
@@ -142,7 +152,7 @@ export default async function handler(req, res) {
 
     // Determine model
     const modelKey = modelOverride || agent.model || 'claude-sonnet-4-20250514';
-    const route = MODEL_ROUTES[modelKey] || MODEL_ROUTES['claude-sonnet'];
+    const route = MODEL_ROUTES[modelKey] || MODEL_ROUTES['llama3-groq'];
 
     // Sanitize history to {role, content} pairs only
     const cleanHistory = (Array.isArray(history) ? history : [])
@@ -219,13 +229,13 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error('/api/chat error:', err);
 
-    // Claude fallback if non-Claude provider fails
-    if (!err.message?.includes('claude')) {
+    // Groq fallback if primary provider fails
+    if (!err.message?.includes('groq')) {
       try {
         const { agent_id = 'aria', message, history = [] } = req.body || {};
         const agent = getAgent(agent_id);
-        const fallback = await callClaude(
-          'claude-sonnet-4-20250514',
+        const fallback = await callGroq(
+          'llama-3.3-70b-versatile',
           agent?.system_prompt || 'You are a helpful assistant.',
           history.slice(-6).map(h => ({ role: h.role, content: h.content })),
           message
@@ -233,10 +243,10 @@ export default async function handler(req, res) {
         return res.status(200).json({
           response:   fallback.text,
           agent:      agent_id,
-          model:      'claude-sonnet-4-20250514',
-          provider:   'claude (fallback)',
+          model:      'llama-3.3-70b-versatile',
+          provider:   'groq (fallback)',
           tokens:     { in: fallback.tokens_in, out: fallback.tokens_out, total: fallback.tokens_in + fallback.tokens_out },
-          cost_usd:   getCost('claude', fallback.tokens_in, fallback.tokens_out),
+          cost_usd:   getCost('groq', fallback.tokens_in, fallback.tokens_out),
           elapsed_ms: 0,
           fallback:   true,
         });
