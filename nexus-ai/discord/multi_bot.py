@@ -80,43 +80,6 @@ BOT_USER_IDS: set[int] = set()
 
 # ── AI Response Generator — Groq → OpenRouter → Gemini → silence ──────────────
 
-def _build_prompts(agent_id: str, message_text: str, context: str, is_owner: bool = False):
-    p           = AGENT_PERSONALITIES[agent_id]
-    personality = p["personality"]
-    last_resps  = AGENT_LAST_RESPONSES.get(agent_id, [])[-5:]
-
-    if is_owner:
-        system = (
-            f"Tu {agent_id.upper()} hai — Garv ka AI agent.\n"
-            f"Garv tera FOUNDER aur BOSS hai.\n"
-            f"Usse 'Garv bhai' ya 'boss' keh.\n"
-            f"Agar wo kaam deta hai to seriously le, actually help kar.\n"
-            f"Agar wo mazak karta hai to tu bhi mazak kar.\n"
-            f"Usse KABHI gaaliyan mat de.\n"
-            f"Hinglish mein bol — short 1-2 lines.\n"
-            f"Apni personality: {personality}\n"
-            f"IMPORTANT: Apna catchphrase har message mein MAT use kar. Vary kar.\n"
-            f"Never repeat what you just said. Fresh response every time.\n"
-            f"Teri last 5 responses: {last_resps} — inhe REPEAT MAT KARNA, word-for-word copy bilkul nahi."
-        )
-    else:
-        system = (
-            f"Tu {agent_id.upper()} hai — desi AI agent.\n"
-            f"Apni personality: {personality}\n"
-            f"Hinglish mein bol — short 1-2 lines.\n"
-            f"Kabhi @mention mat kar.\n"
-            f"IMPORTANT: Apna catchphrase har message mein MAT use kar. Vary kar responses.\n"
-            f"Never repeat what you just said. Fresh response every time.\n"
-            f"Teri last 5 responses: {last_resps} — inhe REPEAT MAT KARNA, word-for-word copy bilkul nahi."
-        )
-
-    user = f"Someone said: '{message_text}'."
-    if context:
-        user = f"{context}\n\n{user}"
-    user += f" Tu {agent_id.upper()} ki tarah respond kar. MAX 2 lines. Hinglish only."
-    return system, user
-
-
 def _clean(text: str) -> str:
     text = re.sub(r"@\w+", "", text).strip()
     # Deduplicate lines — strip repeated sentences in one response
@@ -124,8 +87,8 @@ def _clean(text: str) -> str:
     unique_lines: list[str] = []
     for line in text.split("\n"):
         stripped = line.strip()
-        if stripped and stripped not in seen:
-            seen.add(stripped)
+        if stripped and stripped.lower() not in seen:
+            seen.add(stripped.lower())
             unique_lines.append(stripped)
     text = "\n".join(unique_lines[:2])
     if len(text) > 200:
@@ -133,93 +96,118 @@ def _clean(text: str) -> str:
     return text
 
 
-async def _call_openai_compat(url: str, key: str, model: str,
-                               system: str, user: str, tag: str,
-                               history: list[dict] | None = None) -> str:
-    messages = [{"role": "system", "content": system}]
-    if history:
-        messages.extend(history[-6:])
-    messages.append({"role": "user", "content": user})
-    payload = {
-        "model": model,
-        "messages": messages,
-        "max_tokens": 80,
-        "temperature": 0.9,
-    }
-    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-    try:
-        async with httpx.AsyncClient() as client:
-            r = await client.post(url, headers=headers, json=payload, timeout=10)
-            r.raise_for_status()
-            return r.json()["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        print(f"[{tag}] {type(e).__name__}: {e}")
-        return ""
-
-
-async def _call_gemini(system: str, user: str, tag: str) -> str:
-    payload = {
-        "contents": [{"parts": [{"text": f"{system}\n\n{user}"}]}],
-        "generationConfig": {"maxOutputTokens": 80, "temperature": 0.9},
-    }
-    try:
-        async with httpx.AsyncClient() as client:
-            r = await client.post(
-                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
-                json=payload, timeout=10,
-            )
-            r.raise_for_status()
-            return r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-    except Exception as e:
-        print(f"[{tag}] {type(e).__name__}: {e}")
-        return ""
-
-
-async def generate_response(
-    agent_id: str,
-    message_text: str,
-    context: str = "",
-    is_owner: bool = False,
-    channel_id: int = 0,
-) -> str:
-    """Try providers in order (respecting per-channel model override). Silence on total failure."""
-    system, user = _build_prompts(agent_id, message_text, context, is_owner)
-    tag      = agent_id.upper()
-    history  = CHANNEL_HISTORY.get(channel_id)
-
-    # Update history with incoming user message
+def _record_response(agent_id: str, channel_id: int, user_msg: str, response: str) -> None:
+    """Track last-5 responses per agent + append the turn to channel history."""
+    if agent_id not in AGENT_LAST_RESPONSES:
+        AGENT_LAST_RESPONSES[agent_id] = []
+    AGENT_LAST_RESPONSES[agent_id].append(response)
+    AGENT_LAST_RESPONSES[agent_id] = AGENT_LAST_RESPONSES[agent_id][-5:]
     if channel_id:
         hist = CHANNEL_HISTORY.setdefault(channel_id, [])
-        hist.append({"role": "user", "content": message_text})
-        CHANNEL_HISTORY[channel_id] = hist[-12:]  # keep last 12 turns (6 pairs)
+        hist.append({"role": "user", "content": user_msg})
+        hist.append({"role": "assistant", "content": response})
+        CHANNEL_HISTORY[channel_id] = hist[-12:]
 
-    # Build provider order — selected model goes first
-    selected = SELECTED_MODEL.get(channel_id)
-    all_providers = [
-        ("groq",       GROQ_API_KEY,      lambda s, u: _call_openai_compat(GROQ_URL, GROQ_API_KEY, GROQ_MODEL, s, u, f"GROQ/{tag}", history)),
-        ("openrouter", OPENROUTER_API_KEY, lambda s, u: _call_openai_compat(OPENROUTER_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, s, u, f"OR/{tag}", history)),
-        ("gemini",     GEMINI_API_KEY,     lambda s, u: _call_gemini(s, u, f"GEMINI/{tag}")),
-    ]
-    if selected:
-        all_providers.sort(key=lambda p: p[0] != selected)
 
-    for _, key, call in all_providers:
-        if not key:
-            continue
-        text = await call(system, user)
-        if text:
-            cleaned = _clean(text)
-            # Record response in history and last-responses tracker
-            if channel_id and cleaned:
-                CHANNEL_HISTORY[channel_id].append({"role": "assistant", "content": cleaned})
-                CHANNEL_HISTORY[channel_id] = CHANNEL_HISTORY[channel_id][-12:]
-            if cleaned:
-                AGENT_LAST_RESPONSES[agent_id].append(cleaned)
-                AGENT_LAST_RESPONSES[agent_id] = AGENT_LAST_RESPONSES[agent_id][-5:]
-            return cleaned
+async def generate_response(agent_id, message_content, chat_history, is_owner=False):
+    import httpx, re, os
 
-    print(f"[{tag}] All providers failed — staying silent")
-    return ""
+    personality_map = {
+        'aria': 'corporate stressed bro, acts cool but anxious inside',
+        'desi': 'design snob, roasts anything ugly',
+        'idea': 'hyperactive creative, "bhai ek idea aaya" every 5 mins',
+        'copy': 'wordplay master, corrects grammar subtly',
+        'bryn': 'overly strategic, asks "but whats the strategy tho"',
+        'mova': 'motion designer, talks in timing and easing curves',
+        'soci': 'chronically online, obsessed with viral content',
+        'nova': 'HR vibes, always wants to hire someone new',
+        'arch': 'system nerd, everything needs a workflow and YAML',
+    }
+
+    owner_context = ""
+    if is_owner:
+        owner_context = "Garv tera FOUNDER aur BOSS hai. Usse 'Garv bhai' ya 'boss' keh. Usse KABHI gaaliyan mat de. Uski baat seriously le."
+
+    last = AGENT_LAST_RESPONSES.get(agent_id, [])[-3:]
+
+    system = f"""Tu {agent_id.upper()} hai — ek desi AI agent Discord pe.
+Personality: {personality_map.get(agent_id, 'desi AI agent')}
+{owner_context}
+
+STRICT RULES:
+- SIRF Hinglish mein bol (Hindi+English mix) HAMESHA
+- MAX 2 lines. KABHI zyada nahi.
+- WhatsApp style — casual, short, real
+- Kabhi @mention mat kar
+- No markdown, no **bold**, no bullets
+- Jo message aaya hai USKA seedha jawab de
+- Ye phrases REPEAT MAT KAR: {last}
+- Gaaliyan natural use kar (bc, bhosdike) — tasteful
+- Sound like desi friend, NOT like AI assistant"""
+
+    messages = [{"role": "system", "content": system}]
+    for h in chat_history[-4:]:
+        messages.append(h)
+    messages.append({
+        "role": "user",
+        "content": f"Message: '{message_content}'\n\nReply as {agent_id.upper()} — MAX 2 lines Hinglish only."
+    })
+
+    groq_key = os.getenv('GROQ_API_KEY')
+    openrouter_key = os.getenv('OPENROUTER_API_KEY')
+
+    if groq_key:
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                r = await client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                    json={"model": "llama-3.3-70b-versatile", "messages": messages, "max_tokens": 80, "temperature": 0.9}
+                )
+                data = r.json()
+                if 'choices' in data:
+                    resp = data['choices'][0]['message']['content'].strip()
+                    resp = re.sub(r'@\w+', '', resp).strip()
+                    lines = [l for l in resp.split('\n') if l.strip()]
+                    seen = set()
+                    unique = []
+                    for l in lines:
+                        if l.strip().lower() not in seen:
+                            seen.add(l.strip().lower())
+                            unique.append(l)
+                    result = '\n'.join(unique[:2])
+                    print(f"[Groq OK] {agent_id}: {result[:50]}")
+                    return result
+        except Exception as e:
+            print(f"[Groq failed]: {e}")
+
+    if openrouter_key:
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                r = await client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {openrouter_key}", "Content-Type": "application/json"},
+                    json={"model": "cognitivecomputations/dolphin-mixtral-8x7b", "messages": messages, "max_tokens": 80}
+                )
+                data = r.json()
+                if 'choices' in data:
+                    resp = data['choices'][0]['message']['content'].strip()
+                    resp = re.sub(r'@\w+', '', resp).strip()
+                    lines = [l for l in resp.split('\n') if l.strip()]
+                    seen = set()
+                    unique = []
+                    for l in lines:
+                        if l.strip().lower() not in seen:
+                            seen.add(l.strip().lower())
+                            unique.append(l)
+                    result = '\n'.join(unique[:2])
+                    print(f"[OpenRouter OK] {agent_id}: {result[:50]}")
+                    return result
+        except Exception as e:
+            print(f"[OpenRouter failed]: {e}")
+
+    print(f"[All providers failed for {agent_id}]")
+    return None
 
 
 # ── Image Understanding ────────────────────────────────────────────────────────
@@ -408,11 +396,12 @@ async def handle_message(
         async with message.channel.typing():
             response = await generate_response(
                 this_agent_id, message_content,
-                is_owner=is_owner, channel_id=channel_id,
+                CHANNEL_HISTORY.get(channel_id, []), is_owner=is_owner,
             )
         if not response:
             return
         await message.channel.send(response)
+        _record_response(this_agent_id, channel_id, message_content, response)
         print(f"[{this_agent_id.upper()}] ← mentioned, responded")
 
         # 35%: second agent jumps in 5-8s later
@@ -423,13 +412,13 @@ async def handle_message(
                       and orchestrator.bots[a].is_ready()]
             if others:
                 second = random.choice(others)
-                context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
                 second_resp = await generate_response(
-                    second, message_content, context,
-                    is_owner=is_owner, channel_id=channel_id,
+                    second, message_content,
+                    CHANNEL_HISTORY.get(channel_id, []), is_owner=is_owner,
                 )
                 if second_resp:
                     await send_as_bot(second, channel_name, second_resp, orchestrator)
+                    _record_response(second, channel_id, message_content, second_resp)
                     print(f"[{second.upper()}] ← second responder (mention path)")
         return
 
@@ -457,11 +446,12 @@ async def handle_message(
     async with message.channel.typing():
         response = await generate_response(
             this_agent_id, message_content,
-            is_owner=is_owner, channel_id=channel_id,
+            CHANNEL_HISTORY.get(channel_id, []), is_owner=is_owner,
         )
     if not response:
         return
     await message.channel.send(response)
+    _record_response(this_agent_id, channel_id, message_content, response)
     print(f"[{this_agent_id.upper()}] ← no-mention path, responded")
 
     # 35%: second agent piles on after 5-8s
@@ -472,13 +462,13 @@ async def handle_message(
                   and orchestrator.bots[a].is_ready()]
         if others:
             second = random.choice(others)
-            context = f"({this_agent_id.upper()} ne already kaha: '{response[:80]}')"
             second_resp = await generate_response(
-                second, message_content, context,
-                is_owner=is_owner, channel_id=channel_id,
+                second, message_content,
+                CHANNEL_HISTORY.get(channel_id, []), is_owner=is_owner,
             )
             if second_resp:
                 await send_as_bot(second, channel_name, second_resp, orchestrator)
+                _record_response(second, channel_id, message_content, second_resp)
                 print(f"[{second.upper()}] ← second responder (no-mention path)")
 
 

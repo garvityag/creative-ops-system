@@ -3,805 +3,603 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXUS AI // garvityagnik.in</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<title>NEXUS AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* ── CSS VARIABLES ── */
-:root[data-theme="dark"]{
-  --bg:#050608; --bg2:#0A0C12; --bg3:#10131C; --card:#0E1119;
-  --card-hi:rgba(20,24,35,0.8); --border:rgba(255,255,255,0.06);
-  --border-hi:rgba(0,234,255,0.25); --text:#fff;
-  --text2:rgba(255,255,255,0.65); --text3:rgba(255,255,255,0.4); --text4:rgba(255,255,255,0.18);
-  --green:#00FF94; --orange:#FF8C42; --cyan:#00EAFF; --purple:#A855F7;
-  --pink:#EC4899; --yellow:#FCD34D; --red:#FF3D71;
-  --nav-bg:rgba(5,6,8,0.85);
+:root{
+  --bg:#050914;
+  --bg2:#070D1C;
+  --card:rgba(255,255,255,0.04);
+  --card2:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.08);
+  --border-hi:rgba(79,142,255,0.4);
+  --text:#ffffff;
+  --text2:rgba(255,255,255,0.6);
+  --text3:rgba(255,255,255,0.38);
+  --blue:#4F8EFF;
+  --purple:#A855F7;
+  --green:#00FF94;
+  --orange:#FF8C42;
+  --pink:#EC4899;
+  --cyan:#00EAFF;
+  --yellow:#FCD34D;
 }
-:root[data-theme="light"]{
-  --bg:#F8F9FB; --bg2:#FFFFFF; --bg3:#F1F3F8; --card:#FFFFFF;
-  --card-hi:#FFFFFF; --border:rgba(0,0,0,0.06); --border-hi:rgba(99,102,241,0.25);
-  --text:#0F1419; --text2:rgba(15,20,25,0.7); --text3:rgba(15,20,25,0.5); --text4:rgba(15,20,25,0.3);
-  --green:#10B981; --orange:#F97316; --cyan:#06B6D4; --purple:#8B5CF6;
-  --pink:#EC4899; --yellow:#EAB308; --red:#EF4444;
-  --nav-bg:rgba(255,255,255,0.9);
+[data-theme="light"]{
+  --bg:#EEF2FB;
+  --bg2:#FFFFFF;
+  --card:rgba(255,255,255,0.85);
+  --card2:#FFFFFF;
+  --border:rgba(10,20,40,0.1);
+  --text:#0A1428;
+  --text2:rgba(10,20,40,0.65);
+  --text3:rgba(10,20,40,0.42);
 }
-
-/* ── RESET ── */
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;height:100%;-webkit-font-smoothing:antialiased;overflow:hidden}
-
-[data-theme="dark"] body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(0,234,255,0.02) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,234,255,0.02) 1px,transparent 1px);
-  background-size:60px 60px;
-  mask-image:radial-gradient(ellipse at center,black 0%,transparent 80%);
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Space Grotesk',sans-serif;-webkit-font-smoothing:antialiased;
 }
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(79,142,255,0.3);border-radius:5px}
+input,textarea,select,button{font-family:inherit}
 
-/* ── TOP NAV ── */
-.top-nav{
-  position:fixed;top:0;left:0;right:0;z-index:200;
-  height:56px;background:var(--nav-bg);backdrop-filter:blur(20px);
+/* ── NAV ── */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:300;height:60px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 26px;
+  background:rgba(5,9,20,0.8);backdrop-filter:blur(22px);
   border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px;
 }
-.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-orb{
-  width:32px;height:32px;border-radius:50%;flex-shrink:0;
-  background:radial-gradient(circle at 30% 30%,var(--cyan),var(--purple) 60%,var(--pink));
-  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px;
-  box-shadow:0 0 20px rgba(0,234,255,0.4);
+[data-theme="light"] .nav{background:rgba(255,255,255,0.85)}
+.nav-logo{display:flex;align-items:center;gap:11px;cursor:pointer}
+.nav-mark{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:15px;color:#fff;
+  box-shadow:0 0 24px rgba(79,142,255,0.5);
 }
-.nav-name{font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.05em;color:var(--text)}
-.nav-links{display:flex;align-items:center;gap:4px}
-.nav-link{
-  padding:6px 14px;border-radius:100px;font-size:11px;font-weight:500;
-  color:var(--text3);cursor:pointer;border:1px solid transparent;
-  font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;transition:all 0.2s;
+.nav-logo-text{font-weight:700;font-size:16px;letter-spacing:-0.01em}
+.nav-links{display:flex;gap:6px}
+.nav-item{
+  padding:8px 18px;border-radius:9px;font-size:13px;font-weight:500;
+  color:var(--text3);cursor:pointer;transition:all .2s;border:1px solid transparent;
 }
-.nav-link:hover{color:var(--text2)}
-.nav-link.active-home{background:rgba(0,255,148,0.1);color:var(--green);border-color:rgba(0,255,148,0.25)}
-.nav-link.active-dashboard{background:rgba(255,140,66,0.1);color:var(--orange);border-color:rgba(255,140,66,0.25)}
-.nav-link.active-workflow{background:rgba(0,234,255,0.1);color:var(--cyan);border-color:rgba(0,234,255,0.25)}
-.nav-link.active-chat{background:rgba(168,85,247,0.1);color:var(--purple);border-color:rgba(168,85,247,0.25)}
-.nav-right{display:flex;align-items:center;gap:10px}
-.theme-btn{
-  width:32px;height:32px;border:1px solid var(--border);border-radius:8px;
-  background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  color:var(--text3);transition:all 0.2s;font-size:14px;
+.nav-item:hover{color:var(--text2);background:var(--card)}
+.nav-item.active{
+  color:#fff;background:linear-gradient(135deg,rgba(79,142,255,0.18),rgba(168,85,247,0.14));
+  border-color:var(--border-hi);
 }
-.theme-btn:hover{border-color:var(--border-hi);color:var(--text)}
+[data-theme="light"] .nav-item.active{color:var(--blue)}
+.icon-btn{
+  width:38px;height:38px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);color:var(--text2);cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.icon-btn:hover{border-color:var(--border-hi);color:var(--text)}
 
 /* ── PAGES ── */
 .page{
-  position:fixed;inset:0;padding-top:56px;overflow:hidden;
-  opacity:0;pointer-events:none;transition:opacity 0.35s ease;
+  position:fixed;inset:60px 0 0 0;overflow:hidden;
+  opacity:0;pointer-events:none;transition:opacity .2s ease;
 }
-.page.active{opacity:1;pointer-events:all}
+.page.active{opacity:1;pointer-events:auto}
 
-/* ═══════════════════════════════════════════
-   PAGE 1 — HOME
-════════════════════════════════════════════ */
+/* ════ PAGE 1 — HOME ════ */
 #page-home{
-  position:relative;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:var(--bg);overflow:hidden;
+  overflow-y:auto;
 }
-#page-home canvas#sphere-canvas{
-  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;
+.home-blob{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 60% at 50% 40%,rgba(79,142,255,0.25),rgba(168,85,247,0.15),transparent);
 }
-.home-overlay{
-  position:absolute;inset:0;pointer-events:none;z-index:1;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 45%,rgba(5,6,8,0.15) 0%,rgba(5,6,8,0.6) 55%,rgba(5,6,8,0.9) 100%),
-    linear-gradient(to bottom,rgba(5,6,8,0.4) 0%,transparent 30%,transparent 65%,rgba(5,6,8,0.8) 100%);
+.home-inner{
+  position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+  text-align:center;padding:30px 24px 120px;width:100%;max-width:880px;
 }
-.home-content{position:relative;z-index:10;text-align:center;width:100%;max-width:900px;padding:0 24px}
-.home-eyebrow{
-  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);
-  letter-spacing:0.3em;text-transform:uppercase;margin-bottom:20px;
-  display:flex;align-items:center;justify-content:center;gap:10px;
+.eyebrow{
+  display:flex;align-items:center;gap:12px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.28em;
+  color:var(--blue);margin-bottom:18px;
 }
-.home-eyebrow::before,.home-eyebrow::after{content:'';width:40px;height:1px;background:rgba(0,255,148,0.3)}
+.eyebrow::before,.eyebrow::after{content:'';width:34px;height:1px;background:rgba(79,142,255,0.45)}
 .home-title{
-  font-family:'Outfit',sans-serif;font-size:clamp(56px,10vw,108px);
-  font-weight:900;line-height:0.9;letter-spacing:-0.04em;
-  text-shadow:0 0 80px rgba(0,255,148,0.25),0 0 160px rgba(0,255,148,0.1);
-  color:var(--text);margin-bottom:8px;
+  font-size:clamp(54px,9vw,84px);font-weight:700;line-height:1;letter-spacing:-0.04em;
+  margin-bottom:14px;
 }
-.home-title .glow{
-  background:linear-gradient(135deg,var(--green) 0%,var(--cyan) 50%,var(--green) 100%);
-  background-clip:text;-webkit-background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 30px rgba(0,255,148,0.5));
+.home-title .grad{
+  background:linear-gradient(135deg,#fff 20%,var(--blue) 60%,var(--purple));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.home-tagline{
-  font-size:clamp(14px,2vw,18px);color:var(--text2);
-  margin-bottom:40px;font-weight:400;letter-spacing:0.02em;
+.home-sub{font-size:17px;color:var(--text2);margin-bottom:26px}
+.sphere-box{
+  width:400px;height:400px;max-width:80vw;max-height:80vw;
+  position:relative;margin-bottom:8px;
 }
+#sphere-canvas{width:100%;height:100%;
+  filter:drop-shadow(0 0 60px rgba(79,142,255,0.4));}
 .home-stats{
-  display:flex;justify-content:center;gap:0;margin-bottom:40px;flex-wrap:wrap;
-  background:rgba(0,255,148,0.04);border:1px solid rgba(0,255,148,0.12);
-  border-radius:16px;padding:16px 0;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+  width:100%;max-width:680px;margin:18px 0 28px;
 }
-.hstat{text-align:center;flex:1;min-width:100px;max-width:160px;
-  border-right:1px solid rgba(0,255,148,0.1);}
-.hstat:last-child{border-right:none}
-.hstat-val{
-  font-family:'Outfit',sans-serif;font-size:clamp(28px,4vw,42px);font-weight:700;
-  letter-spacing:-0.03em;color:var(--green);
-  text-shadow:0 0 20px rgba(0,255,148,0.4);
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:16px 12px;backdrop-filter:blur(12px);text-align:center;
 }
-.hstat-lbl{font-size:9px;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;letter-spacing:0.15em;margin-top:2px;text-transform:uppercase}
-.home-cta{
-  display:inline-flex;align-items:center;gap:10px;
-  padding:14px 32px;border-radius:100px;cursor:pointer;font-size:14px;font-weight:600;
-  background:linear-gradient(135deg,var(--green),var(--cyan));
-  color:#050608;border:none;font-family:'Outfit',sans-serif;letter-spacing:0.02em;
-  box-shadow:0 0 40px rgba(0,255,148,0.3),0 8px 32px -8px rgba(0,255,148,0.4);
-  transition:all 0.25s;
+.stat-val{font-size:26px;font-weight:700;letter-spacing:-0.02em}
+.stat-val.blue{color:var(--blue)}
+.stat-val.green{color:var(--green)}
+.stat-val.purple{color:var(--purple)}
+.stat-val.cyan{color:var(--cyan)}
+.stat-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.12em;
+  color:var(--text3);margin-top:5px;text-transform:uppercase;
 }
-.home-cta:hover{transform:translateY(-2px);box-shadow:0 0 60px rgba(0,255,148,0.4),0 12px 40px -8px rgba(0,255,148,0.5)}
-.home-agents-row{
-  position:absolute;bottom:20px;left:0;right:0;
-  display:flex;align-items:center;justify-content:center;gap:14px;z-index:10;
-  flex-wrap:wrap;padding:0 24px;
-  background:linear-gradient(to top,rgba(5,6,8,0.7) 0%,transparent 100%);
-  padding-top:28px;padding-bottom:16px;
+.cta{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:14px 30px;border-radius:100px;border:none;cursor:pointer;
+  font-size:15px;font-weight:600;color:#fff;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  box-shadow:0 0 36px rgba(79,142,255,0.5);transition:transform .2s,box-shadow .2s;
 }
-.h-agent-dot{
-  display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;
+.cta:hover{transform:translateY(-2px);box-shadow:0 0 52px rgba(79,142,255,0.7)}
+.home-agents{
+  position:absolute;bottom:0;left:0;right:0;z-index:3;
+  display:flex;justify-content:center;gap:14px;flex-wrap:wrap;
+  padding:24px 20px 20px;
+  background:linear-gradient(to top,var(--bg) 30%,transparent);
 }
-.h-agent-orb{
-  width:44px;height:44px;border-radius:14px;
+.ha{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer}
+.ha-orb{
+  width:42px;height:42px;border-radius:12px;position:relative;
   display:flex;align-items:center;justify-content:center;font-size:18px;
-  border:1px solid rgba(0,255,148,0.2);
-  background:rgba(0,255,148,0.05);
-  transition:all 0.2s;position:relative;
+  border:1px solid var(--border);transition:transform .2s;
 }
-.h-agent-orb:hover{border-color:rgba(0,255,148,0.5);transform:translateY(-4px)}
-.h-agent-orb .status-dot{
-  position:absolute;bottom:-3px;right:-3px;width:10px;height:10px;
-  border-radius:50%;border:2px solid var(--bg);
+.ha:hover .ha-orb{transform:translateY(-4px)}
+.ha-dot{
+  position:absolute;bottom:-3px;right:-3px;width:11px;height:11px;border-radius:50%;
+  border:2.5px solid var(--bg);
 }
-.h-agent-orb .status-dot.on{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
-.h-agent-orb .status-dot.off{background:var(--text4)}
-.h-agent-name{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0.1em}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.ha-name{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.06em}
 
-/* ═══════════════════════════════════════════
-   PAGE 2 — DASHBOARD
-════════════════════════════════════════════ */
-#page-dashboard{display:flex;flex-direction:row;height:calc(100vh - 56px);overflow:hidden}
-
-/* Sidebar */
-.dash-sidebar{
-  width:220px;flex-shrink:0;border-right:1px solid var(--border);
-  background:rgba(10,12,18,0.6);display:flex;flex-direction:column;gap:4px;
-  padding:16px 10px;overflow-y:auto;
+/* ════ PAGE 2 — DASHBOARD ════ */
+#page-dashboard{display:flex}
+.sidebar{
+  width:220px;flex-shrink:0;height:100%;overflow-y:auto;
+  border-right:1px solid var(--border);background:var(--bg2);
+  padding:18px 12px;
 }
-[data-theme="light"] .dash-sidebar{background:rgba(248,249,251,0.9)}
-.sidebar-section-lbl{
-  font-size:9px;color:var(--text4);letter-spacing:0.2em;font-family:'JetBrains Mono',monospace;
-  padding:8px 10px 4px;text-transform:uppercase;
+.sb-brand{display:flex;align-items:center;gap:9px;padding:4px 8px 18px}
+.sb-brand .nav-mark{width:28px;height:28px;font-size:12px;border-radius:8px}
+.sb-brand-text{font-weight:700;font-size:14px}
+.sb-group{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.16em;
+  color:var(--text3);padding:14px 10px 6px;text-transform:uppercase}
+.sb-item{
+  display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:9px;
+  font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;
 }
-.sidebar-item{
-  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
-  cursor:pointer;transition:all 0.15s;color:var(--text3);font-size:12px;font-weight:500;
+.sb-item:hover{background:var(--card);color:var(--text)}
+.sb-item.active{
+  background:linear-gradient(135deg,rgba(79,142,255,0.16),rgba(168,85,247,0.1));
+  color:#fff;box-shadow:inset 2px 0 0 var(--blue);
 }
-.sidebar-item:hover{background:rgba(255,140,66,0.06);color:var(--text2)}
-.sidebar-item.active{background:rgba(255,140,66,0.1);color:var(--orange);border-left:2px solid var(--orange)}
-.sidebar-icon{font-size:16px;width:20px;text-align:center}
-
-/* Dash main */
+.sb-ico{font-size:15px;width:18px;text-align:center}
 .dash-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.dash-topbar{
-  display:flex;align-items:center;gap:12px;padding:12px 20px;
-  border-bottom:1px solid var(--border);background:rgba(10,12,18,0.3);flex-shrink:0;
+.dash-top{
+  height:58px;flex-shrink:0;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;padding:0 22px;
 }
-[data-theme="light"] .dash-topbar{background:rgba(255,255,255,0.7)}
 .dash-search{
-  flex:1;max-width:300px;height:34px;background:rgba(255,255,255,0.03);
-  border:1px solid var(--border);border-radius:10px;padding:0 12px;
-  color:var(--text);font-size:12px;font-family:'Outfit',sans-serif;outline:none;
-  transition:border-color 0.2s;
+  flex:1;max-width:360px;height:38px;border-radius:10px;
+  background:var(--card);border:1px solid var(--border);
+  padding:0 14px;color:var(--text);font-size:13px;outline:none;
 }
-[data-theme="light"] .dash-search{background:rgba(0,0,0,0.03)}
-.dash-search:focus{border-color:rgba(255,140,66,0.4)}
-.dash-search::placeholder{color:var(--text4)}
-.topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto}
-.notif-btn{
-  width:34px;height:34px;border:1px solid var(--border);border-radius:10px;
-  background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:16px;color:var(--text3);transition:all 0.2s;position:relative;
+.dash-search::placeholder{color:var(--text3)}
+.dash-search:focus{border-color:var(--border-hi)}
+.dash-top-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.sync{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
+.dash-body{flex:1;overflow-y:auto;padding:22px}
+.dv{display:none}
+.dv.active{display:block}
+.dv-head{margin-bottom:18px}
+.dv-h1{font-size:24px;font-weight:700;letter-spacing:-0.02em}
+.dv-h2{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);margin-top:4px}
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:18px;backdrop-filter:blur(12px);
 }
-.notif-btn:hover{border-color:rgba(255,140,66,0.4);color:var(--orange)}
-.notif-badge{
-  position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;
-  background:var(--orange);border:2px solid var(--bg);animation:pulse 2s infinite;
+.card-t{font-size:14px;font-weight:600}
+.card-s{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);
+  margin-top:3px;margin-bottom:14px;letter-spacing:0.05em}
+.big-num{font-size:34px;font-weight:700;letter-spacing:-0.03em}
+.bar{height:7px;border-radius:6px;background:rgba(255,255,255,0.07);overflow:hidden;margin-top:8px}
+.bar-fill{height:100%;border-radius:6px;
+  background:linear-gradient(90deg,var(--blue),var(--purple))}
+.prog-row{margin-bottom:13px}
+.prog-meta{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.prog-meta .v{font-family:'JetBrains Mono',monospace;color:var(--blue)}
+.ag-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:15px;cursor:pointer;transition:all .2s;
 }
-.sync-tag{
-  font-size:9px;color:var(--text4);font-family:'JetBrains Mono',monospace;
-  padding:4px 10px;border:1px solid var(--border);border-radius:6px;
+.ag-card:hover{border-color:var(--border-hi);transform:translateY(-3px)}
+.ag-top{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.ag-orb{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0}
+.ag-name{font-size:14px;font-weight:600}
+.ag-role{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3)}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.05em;
 }
+.dot{width:6px;height:6px;border-radius:50%}
+.ag-meta{display:flex;justify-content:space-between;margin-top:11px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
+.ag-meta .v{color:var(--text2)}
+.tk-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12px}
+.tk-lbl{width:74px;color:var(--text2)}
+.tk-bar{flex:1;height:6px;border-radius:5px;background:rgba(255,255,255,0.07);overflow:hidden}
+.tk-fill{height:100%;border-radius:5px}
+.tk-val{width:46px;text-align:right;font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--text3)}
+.cost-row{display:flex;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid var(--border);font-size:13px}
+.cost-row:last-child{border:none}
+.cost-row .v{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--blue)}
+.pipe{display:flex;align-items:center;overflow-x:auto;padding:6px 0}
+.pipe-step{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:78px}
+.pipe-orb{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;
+  justify-content:center;font-size:17px;color:#fff}
+.pipe-orb.done{background:linear-gradient(135deg,var(--green),#059669)}
+.pipe-orb.current{background:linear-gradient(135deg,var(--blue),var(--purple));
+  box-shadow:0 0 0 4px rgba(79,142,255,0.18);animation:beat 2s infinite}
+.pipe-orb.pending{background:rgba(255,255,255,0.05);color:var(--text3);
+  border:1px dashed var(--border)}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.pipe-lbl{font-size:10px;font-weight:600}
+.pipe-arrow{width:26px;height:2px;background:var(--border);margin:0 4px 24px;border-radius:2px}
+.pipe-arrow.on{background:var(--green)}
+.list-row{display:flex;align-items:center;gap:11px;padding:11px 0;
+  border-bottom:1px solid var(--border)}
+.list-row:last-child{border:none}
 
-/* Dash content scroll */
-.dash-content{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
-.dash-content::-webkit-scrollbar{width:4px}
-.dash-content::-webkit-scrollbar-thumb{background:rgba(255,140,66,0.2);border-radius:4px}
-
-/* Cards */
-.d-card{
-  background:var(--card);border:1px solid var(--border);border-radius:18px;
-  padding:18px;transition:border-color 0.2s;
+/* ════ PAGE 3 — WORKFLOW ════ */
+#page-workflow{display:flex;align-items:center;justify-content:center}
+.pw-modal{
+  width:380px;max-width:90vw;background:var(--card2);
+  border:1px solid var(--border);border-radius:20px;padding:34px 30px;
+  text-align:center;backdrop-filter:blur(20px);
+  box-shadow:0 30px 80px -20px rgba(0,0,0,0.6);
 }
-[data-theme="dark"] .d-card{background:linear-gradient(180deg,rgba(20,24,35,0.5),rgba(14,17,25,0.7))}
-.d-card:hover{border-color:rgba(255,140,66,0.15)}
-.dc-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;font-family:'Outfit',sans-serif}
-.dc-sub{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;margin-bottom:14px}
-
-/* Grid rows */
-.dash-row{display:grid;gap:16px}
-.dash-row-3{grid-template-columns:1.2fr 1.8fr 1fr}
-.dash-row-2{grid-template-columns:1.5fr 1fr}
-.dash-row-3x3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:1200px){.dash-row-3,.dash-row-2,.dash-row-3x3{grid-template-columns:1fr 1fr}}
-@media(max-width:768px){.dash-row-3,.dash-row-2,.dash-row-3x3{grid-template-columns:1fr}}
-
-/* Progress bars */
-.prog-item{margin-bottom:12px}
-.prog-head{display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px}
-.prog-head span:first-child{color:var(--text2)}
-.prog-head span:last-child{color:var(--orange);font-family:'JetBrains Mono',monospace}
-.prog-bar{height:5px;background:rgba(255,255,255,0.05);border-radius:100px;overflow:hidden}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--yellow));border-radius:100px;transition:width 1s;box-shadow:0 0 8px rgba(255,140,66,0.4)}
-
-/* Agent status mini cards */
-.agent-mini{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;
-  background:rgba(255,255,255,0.02);border-radius:10px;border:1px solid var(--border);
-  transition:border-color 0.2s;cursor:pointer;
+.pw-modal.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}
+  20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+.pw-lock{font-size:38px;margin-bottom:12px}
+.pw-title{font-size:19px;font-weight:700;letter-spacing:0.04em;color:var(--cyan)}
+.pw-sub{font-size:12px;color:var(--text3);margin:7px 0 20px}
+.pw-input{
+  width:100%;height:46px;border-radius:11px;text-align:center;
+  background:rgba(0,234,255,0.06);border:1px solid rgba(0,234,255,0.3);
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:15px;
+  letter-spacing:0.1em;outline:none;margin-bottom:14px;
 }
-.agent-mini:hover{border-color:rgba(255,140,66,0.2)}
-.am-orb{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.am-name{font-size:12px;font-weight:600;color:var(--text);flex:1}
-.am-model{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace}
-.am-tokens{font-size:10px;color:var(--orange);font-family:'JetBrains Mono',monospace;margin-left:auto}
-.am-status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-
-/* Performance chart canvas */
-#perf-canvas{width:100%;height:120px;display:block}
-
-/* Token usage */
-.token-bars{display:flex;flex-direction:column;gap:8px;margin-top:4px}
-.tb-row{display:flex;align-items:center;gap:10px;font-size:11px}
-.tb-lbl{color:var(--text2);width:80px;flex-shrink:0}
-.tb-bar{flex:1;height:6px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden}
-.tb-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--orange),var(--pink));box-shadow:0 0 6px rgba(255,140,66,0.3);transition:width 1s}
-.tb-val{color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:10px;width:50px;text-align:right}
-
-/* Pipeline steps */
-.pip-flow{display:flex;align-items:center;gap:0;overflow-x:auto;padding:4px 0}
-.pip-flow::-webkit-scrollbar{height:3px}
-.pip-flow::-webkit-scrollbar-thumb{background:rgba(255,140,66,0.2);border-radius:3px}
-.pip-step{display:flex;flex-direction:column;align-items:center;min-width:80px;gap:6px}
-.pip-orb{
-  width:48px;height:48px;border-radius:14px;display:flex;align-items:center;
-  justify-content:center;font-size:18px;font-weight:700;color:white;transition:all 0.3s;
+.pw-input:focus{border-color:var(--cyan)}
+.pw-btn{
+  width:100%;height:44px;border-radius:11px;border:none;cursor:pointer;
+  font-size:14px;font-weight:600;color:#04121a;
+  background:linear-gradient(135deg,var(--cyan),#22D3EE);
+  box-shadow:0 0 28px rgba(0,234,255,0.4);
 }
-.pip-orb.done{background:linear-gradient(135deg,var(--green),#059669);box-shadow:0 6px 20px -4px var(--green)}
-.pip-orb.current{background:linear-gradient(135deg,var(--orange),#EA580C);box-shadow:0 0 0 3px rgba(255,140,66,0.2),0 6px 24px -4px var(--orange);animation:pipBeat 2s infinite}
-.pip-orb.pending{background:rgba(255,255,255,0.03);color:var(--text4);border:1px dashed var(--border)}
-@keyframes pipBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
-.pip-lbl{font-size:10px;font-weight:600;font-family:'Outfit',sans-serif;text-align:center}
-.pip-arrow{width:24px;height:2px;background:var(--border);margin:0 4px 24px;border-radius:2px}
-.pip-arrow.done-arrow{background:var(--green);box-shadow:0 0 6px var(--green)}
-
-/* Cost display */
-.cost-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
-.cost-row:last-child{border-bottom:none}
-.cost-lbl{font-size:11px;color:var(--text2)}
-.cost-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--orange)}
-
-/* ═══════════════════════════════════════════
-   PAGE 3 — WORKFLOW
-════════════════════════════════════════════ */
-#page-workflow{display:flex;align-items:center;justify-content:center;overflow:hidden}
-
-.wf-gate{
-  display:flex;flex-direction:column;align-items:center;gap:16px;
-  padding:40px;text-align:center;
+.pw-err{color:#FF5C7A;font-size:11px;font-family:'JetBrains Mono',monospace;
+  margin-top:10px;height:14px}
+.wf-stage{position:absolute;inset:0;display:none;flex-direction:column}
+.wf-stage.show{display:flex}
+.wf-bar{
+  height:50px;flex-shrink:0;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:0 20px;
 }
-.wf-gate-icon{font-size:48px;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(0,234,255,0.5))}
-.wf-gate-title{font-size:24px;font-weight:700;font-family:'Outfit',sans-serif;color:var(--cyan)}
-.wf-gate-sub{font-size:13px;color:var(--text3);margin-bottom:8px}
-.wf-pw-wrap{position:relative}
-.wf-pw{
-  background:rgba(0,234,255,0.05);border:1px solid rgba(0,234,255,0.25);
-  border-radius:12px;padding:12px 16px;color:var(--text);font-size:14px;
-  font-family:'JetBrains Mono',monospace;outline:none;width:260px;text-align:center;
-  letter-spacing:0.1em;transition:all 0.2s;
-}
-.wf-pw:focus{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,234,255,0.15)}
-.wf-unlock-btn{
-  margin-top:10px;padding:12px 32px;border-radius:100px;border:none;cursor:pointer;
-  background:linear-gradient(135deg,var(--cyan),#0891B2);color:#050608;
-  font-weight:700;font-size:13px;font-family:'Outfit',sans-serif;
-  box-shadow:0 0 30px rgba(0,234,255,0.3);transition:all 0.2s;
-}
-.wf-unlock-btn:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(0,234,255,0.4)}
-.wf-error{font-size:11px;color:var(--red);font-family:'JetBrains Mono',monospace;display:none}
-
-/* Workflow canvas area */
-.wf-canvas-area{
-  position:absolute;inset:56px 0 0 0;display:none;
-  flex-direction:column;background:var(--bg);overflow:hidden;
-}
-.wf-canvas-area.unlocked{display:flex}
-.wf-toolbar{
-  display:flex;align-items:center;gap:12px;padding:10px 20px;
-  border-bottom:1px solid var(--border);background:rgba(10,12,18,0.8);flex-shrink:0;
-}
-.wf-toolbar-title{font-size:13px;font-weight:600;color:var(--cyan);font-family:'Outfit',sans-serif}
-.wf-badge{
-  padding:3px 10px;border-radius:100px;font-size:9px;font-family:'JetBrains Mono',monospace;
-  background:rgba(0,234,255,0.1);color:var(--cyan);border:1px solid rgba(0,234,255,0.25);letter-spacing:0.1em;
-}
-#wf-canvas{flex:1;display:block;width:100%;cursor:grab}
-#wf-canvas:active{cursor:grabbing}
-
-/* Node side panel */
+.wf-bar-t{font-size:13px;font-weight:600;color:var(--cyan)}
+.wf-tag{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 9px;
+  border-radius:20px;background:rgba(0,234,255,0.12);color:var(--cyan);
+  border:1px solid rgba(0,234,255,0.3)}
+#wf-canvas{flex:1;width:100%;display:block;cursor:pointer}
 .wf-panel{
-  position:absolute;right:0;top:56px;bottom:0;width:280px;
-  background:rgba(10,12,18,0.95);border-left:1px solid rgba(0,234,255,0.15);
-  padding:20px;overflow-y:auto;transform:translateX(100%);transition:transform 0.3s;z-index:10;
+  position:absolute;top:0;right:0;bottom:0;width:280px;
+  background:var(--bg2);border-left:1px solid rgba(0,234,255,0.2);
+  padding:24px;transform:translateX(100%);transition:transform .3s;overflow-y:auto;
 }
 .wf-panel.open{transform:translateX(0)}
-.wf-panel-close{
-  position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:8px;
-  background:rgba(255,255,255,0.05);border:1px solid var(--border);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px;
-}
+.wf-px{position:absolute;top:14px;right:14px;width:28px;height:28px;
+  border-radius:8px;border:1px solid var(--border);background:var(--card);
+  color:var(--text2);cursor:pointer;font-size:13px}
 
-/* ═══════════════════════════════════════════
-   PAGE 4 — CHAT
-════════════════════════════════════════════ */
-#page-chat{display:flex;flex-direction:row;height:calc(100vh - 56px);overflow:hidden}
-
-/* Left panel */
-.chat-left{
-  width:280px;flex-shrink:0;border-right:1px solid var(--border);
-  display:flex;flex-direction:column;background:rgba(10,12,18,0.5);
-}
-[data-theme="light"] .chat-left{background:rgba(248,249,251,0.9)}
-.chat-left-head{
-  padding:14px 16px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
-}
-.chat-left-title{font-size:13px;font-weight:600;font-family:'Outfit',sans-serif}
-.group-toggle{
-  display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text3);
-  font-family:'JetBrains Mono',monospace;cursor:pointer;
-}
-.group-toggle input{width:12px;height:12px;accent-color:var(--purple)}
-.agent-list{flex:1;overflow-y:auto;padding:8px}
-.agent-list::-webkit-scrollbar{width:3px}
-.agent-list::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.2);border-radius:3px}
-.chat-agent-item{
-  display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:10px;
-  cursor:pointer;transition:all 0.15s;border:1px solid transparent;margin-bottom:2px;
-}
-.chat-agent-item:hover{background:rgba(168,85,247,0.06)}
-.chat-agent-item.active{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.25)}
-.cai-orb{
-  width:36px;height:36px;border-radius:10px;display:flex;align-items:center;
-  justify-content:center;font-size:14px;flex-shrink:0;position:relative;
-}
-.cai-status{
-  position:absolute;bottom:-2px;right:-2px;width:9px;height:9px;
-  border-radius:50%;border:2px solid var(--bg);
-}
-.cai-status.on{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
-.cai-status.off{background:var(--text4)}
-.cai-info{flex:1;min-width:0}
-.cai-name{font-size:12px;font-weight:600;color:var(--text);font-family:'Outfit',sans-serif}
-.cai-last{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
-.cai-time{font-size:9px;color:var(--text4);font-family:'JetBrains Mono',monospace;flex-shrink:0}
-
-/* Chat center */
-.chat-center{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.chat-topbar{
-  display:flex;align-items:center;gap:12px;padding:10px 16px;
-  border-bottom:1px solid var(--border);background:rgba(10,12,18,0.3);flex-shrink:0;
-}
-[data-theme="light"] .chat-topbar{background:rgba(255,255,255,0.7)}
-.chat-agent-orb{
-  width:36px;height:36px;border-radius:10px;display:flex;align-items:center;
-  justify-content:center;font-size:15px;flex-shrink:0;
-}
-.chat-agent-name{font-size:13px;font-weight:600;font-family:'Outfit',sans-serif;flex:1}
-.chat-model-select{
-  background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;
-  padding:5px 10px;color:var(--text);font-size:10px;font-family:'JetBrains Mono',monospace;
-  cursor:pointer;outline:none;transition:border-color 0.2s;
-}
-.chat-model-select:focus{border-color:rgba(168,85,247,0.4)}
-.chat-status-pill{
-  padding:3px 10px;border-radius:100px;font-size:9px;font-family:'JetBrains Mono',monospace;
-  background:rgba(0,255,148,0.1);color:var(--green);border:1px solid rgba(0,255,148,0.2);
-}
-.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.chat-msgs::-webkit-scrollbar{width:4px}
-.chat-msgs::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.2);border-radius:4px}
-.msg{display:flex;gap:10px;animation:msgIn 0.3s ease}
-.msg.user{flex-direction:row-reverse}
-@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.msg-ava{
-  width:32px;height:32px;border-radius:10px;display:flex;align-items:center;
-  justify-content:center;font-size:13px;flex-shrink:0;font-weight:700;
-}
-.msg-body{max-width:72%;display:flex;flex-direction:column;gap:3px}
-.msg.user .msg-body{align-items:flex-end}
-.msg-bubble{
-  padding:10px 14px;border-radius:14px;font-size:12px;line-height:1.65;
-}
+/* ════ PAGE 4 — CHAT ════ */
+#page-chat{display:flex}
+.chat-left{width:260px;flex-shrink:0;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;background:var(--bg2)}
+.cl-search{padding:14px}
+.cl-search input{width:100%;height:36px;border-radius:9px;
+  background:var(--card);border:1px solid var(--border);
+  padding:0 12px;color:var(--text);font-size:12px;outline:none}
+.cl-list{flex:1;overflow-y:auto;padding:0 10px}
+.cl-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:11px;
+  cursor:pointer;margin-bottom:3px;border:1px solid transparent;transition:all .15s}
+.cl-item:hover{background:var(--card)}
+.cl-item.active{background:var(--card);border-color:var(--border-hi)}
+.cl-orb{width:38px;height:38px;border-radius:11px;flex-shrink:0;position:relative;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.cl-orb .ha-dot{width:10px;height:10px}
+.cl-info{flex:1;min-width:0}
+.cl-name{font-size:13px;font-weight:600}
+.cl-prev{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.cl-bottom{padding:12px}
+.cl-group-btn{width:100%;height:38px;border-radius:9px;cursor:pointer;
+  background:var(--card);border:1px solid var(--border);color:var(--text2);
+  font-size:12px;font-weight:500;transition:all .15s}
+.cl-group-btn.on{background:linear-gradient(135deg,rgba(79,142,255,0.2),rgba(168,85,247,0.15));
+  color:#fff;border-color:var(--border-hi)}
+.chat-mid{flex:1;display:flex;flex-direction:column;min-width:0}
+.cm-top{height:62px;flex-shrink:0;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:0 18px}
+.cm-orb{width:40px;height:40px;border-radius:11px;display:flex;
+  align-items:center;justify-content:center;font-size:18px}
+.cm-name{font-size:14px;font-weight:600}
+.cm-role{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
+.cm-select{margin-left:auto;height:34px;border-radius:9px;
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  font-size:11px;padding:0 10px;outline:none;cursor:pointer}
+.cm-pill{padding:4px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace;
+  font-size:9px;background:rgba(0,255,148,0.12);color:var(--green);
+  border:1px solid rgba(0,255,148,0.3)}
+.cm-msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;gap:10px;max-width:78%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-av{width:32px;height:32px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:14px}
+.msg-bubble{padding:11px 14px;border-radius:14px;font-size:13px;line-height:1.55}
+.msg.agent .msg-bubble{background:var(--card2);border:1px solid var(--border);
+  border-left:3px solid var(--ac,var(--blue));border-radius:4px 14px 14px 14px}
 .msg.user .msg-bubble{
-  background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;
-  border-radius:14px 14px 4px 14px;
-}
-.msg.agent .msg-bubble{
-  background:rgba(255,255,255,0.04);border:1px solid var(--border);
-  color:var(--text2);border-radius:14px 14px 14px 4px;
-}
-.msg.agent .msg-bubble.colored{border-left:3px solid var(--ac)}
-.msg-meta{font-size:9px;color:var(--text4);font-family:'JetBrains Mono',monospace}
-.msg.user .msg-meta{text-align:right}
-.typing-ind{display:flex;gap:4px;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;width:fit-content}
-.td{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:typBounce 1.2s infinite}
-.td:nth-child(2){animation-delay:0.2s}.td:nth-child(3){animation-delay:0.4s}
-@keyframes typBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+  background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;
+  border-radius:14px 4px 14px 14px}
+.msg-meta{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);
+  margin-top:4px}
+.typing{display:flex;gap:4px;padding:13px 15px;background:var(--card2);
+  border:1px solid var(--border);border-radius:14px;width:fit-content}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--text3);
+  animation:tb 1.2s infinite}
+.tdot:nth-child(2){animation-delay:.2s}
+.tdot:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.cm-input{flex-shrink:0;border-top:1px solid var(--border);padding:14px 16px;
+  display:flex;align-items:flex-end;gap:9px}
+.cm-input textarea{flex:1;min-height:42px;max-height:120px;border-radius:12px;
+  background:var(--card);border:1px solid var(--border);padding:11px 14px;
+  color:var(--text);font-size:13px;resize:none;outline:none;line-height:1.5}
+.cm-input textarea:focus{border-color:var(--border-hi)}
+.cm-ibtn{width:42px;height:42px;border-radius:11px;flex-shrink:0;cursor:pointer;
+  background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:15px}
+.cm-send{width:42px;height:42px;border-radius:11px;flex-shrink:0;cursor:pointer;
+  border:none;color:#fff;font-size:15px;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  box-shadow:0 0 20px rgba(79,142,255,0.4)}
+.chat-right{width:260px;flex-shrink:0;border-left:1px solid var(--border);
+  background:var(--bg2);overflow-y:auto;padding:22px 18px}
+.cr-av{width:64px;height:64px;border-radius:16px;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;font-size:28px}
+.cr-name{text-align:center;font-size:17px;font-weight:700}
+.cr-role{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text3);margin-bottom:14px}
+.cr-stat{display:flex;justify-content:space-between;padding:9px 0;
+  border-bottom:1px solid var(--border);font-size:12px}
+.cr-stat .v{font-family:'JetBrains Mono',monospace;color:var(--text)}
+.cr-sec{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;
+  color:var(--text3);margin:18px 0 9px;text-transform:uppercase}
+.chip{display:inline-block;padding:4px 10px;border-radius:7px;font-size:10px;
+  font-family:'JetBrains Mono',monospace;background:var(--card);
+  border:1px solid var(--border);color:var(--text2);margin:0 4px 4px 0}
+.cr-btns{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.cr-btn{padding:9px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:500;
+  background:var(--card);border:1px solid var(--border);color:var(--text2);
+  font-family:'JetBrains Mono',monospace;transition:all .15s}
+.cr-btn:hover{border-color:var(--border-hi);color:var(--text)}
 
-/* Chat bottom */
-.chat-bottom{
-  border-top:1px solid var(--border);padding:12px 16px;
-  background:rgba(10,12,18,0.3);flex-shrink:0;
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .sphere-box{width:250px;height:250px}
+  .home-stats{grid-template-columns:1fr 1fr;max-width:340px}
+  .sidebar{display:none}
+  .grid.g3,.grid.g2{grid-template-columns:1fr}
+  .chat-right{display:none}
+  .chat-left{width:200px}
 }
-[data-theme="light"] .chat-bottom{background:rgba(255,255,255,0.7)}
-.chat-input-row{display:flex;align-items:flex-end;gap:8px}
-.chat-input{
-  flex:1;min-height:40px;max-height:120px;background:rgba(255,255,255,0.03);
-  border:1px solid var(--border);border-radius:12px;padding:10px 14px;
-  color:var(--text);font-size:12px;font-family:'Outfit',sans-serif;
-  resize:none;outline:none;transition:border-color 0.2s;line-height:1.5;
-}
-[data-theme="light"] .chat-input{background:rgba(0,0,0,0.03)}
-.chat-input:focus{border-color:rgba(168,85,247,0.4)}
-.chat-input::placeholder{color:var(--text4)}
-.chat-icon-btn{
-  width:36px;height:36px;border:1px solid var(--border);border-radius:10px;
-  background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:15px;color:var(--text3);transition:all 0.2s;flex-shrink:0;
-}
-.chat-icon-btn:hover{border-color:rgba(168,85,247,0.4);color:var(--purple)}
-.chat-send-btn{
-  width:36px;height:36px;border:none;border-radius:10px;cursor:pointer;
-  background:linear-gradient(135deg,var(--purple),var(--pink));
-  display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;
-  transition:all 0.2s;flex-shrink:0;box-shadow:0 4px 16px -4px var(--purple);
-}
-.chat-send-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px -4px var(--purple)}
-
-/* Right panel */
-.chat-right{
-  width:260px;flex-shrink:0;border-left:1px solid var(--border);
-  display:flex;flex-direction:column;background:rgba(10,12,18,0.5);overflow-y:auto;padding:16px;
-}
-[data-theme="light"] .chat-right{background:rgba(248,249,251,0.9)}
-.chat-right::-webkit-scrollbar{width:3px}
-.chat-right::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.2);border-radius:3px}
-.cr-section{margin-bottom:20px}
-.cr-title{font-size:10px;color:var(--text3);letter-spacing:0.15em;font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-bottom:10px}
-.cr-stat{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:11px;
-}
-.cr-stat:last-child{border-bottom:none}
-.cr-stat-l{color:var(--text3)}
-.cr-stat-v{color:var(--text);font-family:'JetBrains Mono',monospace;font-weight:500}
-.cr-chip{
-  display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;
-  font-size:9px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,0.03);
-  border:1px solid var(--border);color:var(--text3);margin:2px;
-}
-.cr-chip.on{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);color:var(--purple)}
-.cr-action-btn{
-  width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);
-  background:rgba(255,255,255,0.02);color:var(--text2);font-size:11px;
-  cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all 0.15s;
-  display:flex;align-items:center;gap:8px;margin-bottom:6px;text-align:left;
-}
-.cr-action-btn:hover{background:rgba(168,85,247,0.08);border-color:rgba(168,85,247,0.3);color:var(--purple)}
-
-@media(max-width:1024px){.chat-right{display:none}.chat-left{width:240px}}
-@media(max-width:768px){.chat-left{width:200px}.dash-sidebar{width:180px}}
-
-/* ── DASH VIEWS ── */
-.dash-view{display:none;flex-direction:column;gap:16px}
-.dash-view.dv-active{display:flex}
-.dv-header{margin-bottom:4px}
-.dv-title{font-size:22px;font-weight:700;font-family:'Outfit',sans-serif;letter-spacing:-0.02em}
-.dv-sub{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:3px;letter-spacing:0.05em}
-.dv-empty{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:60px 20px;color:var(--text3);gap:12px;text-align:center;
-}
-.dv-empty-icon{font-size:36px;opacity:0.3}
-.dv-empty-text{font-size:13px;font-family:'JetBrains Mono',monospace}
 </style>
 </head>
 <body>
 
-<!-- ── TOP NAV ── -->
-<nav class="top-nav">
-  <a class="nav-logo" href="#" onclick="return false">
-    <div class="nav-orb">N</div>
-    <span class="nav-name">NEXUS AI</span>
-  </a>
+<!-- ── NAV ── -->
+<nav class="nav">
+  <div class="nav-logo" onclick="showPage('home')">
+    <div class="nav-mark">N</div>
+    <span class="nav-logo-text">NEXUS AI</span>
+  </div>
   <div class="nav-links">
-    <div class="nav-link" data-page="home" onclick="goPage('home')">Home</div>
-    <div class="nav-link" data-page="dashboard" onclick="goPage('dashboard')">Dashboard</div>
-    <div class="nav-link" data-page="workflow" onclick="goPage('workflow')">Workflow</div>
-    <div class="nav-link" data-page="chat" onclick="goPage('chat')">Chat</div>
+    <div class="nav-item" data-nav="home"      onclick="showPage('home')">Home</div>
+    <div class="nav-item" data-nav="dashboard" onclick="showPage('dashboard')">Dashboard</div>
+    <div class="nav-item" data-nav="workflow"  onclick="showPage('workflow')">Workflow</div>
+    <div class="nav-item" data-nav="chat"      onclick="showPage('chat')">Chat</div>
   </div>
-  <div class="nav-right">
-    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">☀</button>
-  </div>
+  <button class="icon-btn" id="theme-btn" onclick="toggleTheme()">☾</button>
 </nav>
 
-<!-- ═══════════════════════════════════════════
-     PAGE 1 — HOME
-════════════════════════════════════════════ -->
+<!-- ════ PAGE 1 — HOME ════ -->
 <section class="page" id="page-home">
-  <canvas id="sphere-canvas"></canvas>
-  <div class="home-overlay"></div>
-  <div class="home-content">
-    <div class="home-eyebrow">autonomous ai system</div>
-    <div class="home-title"><span class="glow">NEXUS AI</span></div>
-    <div class="home-tagline">Your autonomous creative team. Always working.</div>
+  <div class="home-blob"></div>
+  <div class="home-inner">
+    <div class="eyebrow">AUTONOMOUS AI SYSTEM</div>
+    <h1 class="home-title"><span class="grad">NEXUS AI</span></h1>
+    <p class="home-sub">Your autonomous creative team. Always working.</p>
+    <div class="sphere-box"><canvas id="sphere-canvas"></canvas></div>
     <div class="home-stats">
-      <div class="hstat"><div class="hstat-val" id="hs-online">0</div><div class="hstat-lbl">Agents Online</div></div>
-      <div class="hstat"><div class="hstat-val" id="hs-tasks">0</div><div class="hstat-lbl">Tasks Today</div></div>
-      <div class="hstat"><div class="hstat-val" id="hs-models">0</div><div class="hstat-lbl">Models Active</div></div>
-      <div class="hstat"><div class="hstat-val" id="hs-uptime">--</div><div class="hstat-lbl">Uptime %</div></div>
+      <div class="stat-card"><div class="stat-val green" id="hs-agents">9</div><div class="stat-lbl">Agents Online</div></div>
+      <div class="stat-card"><div class="stat-val blue" id="hs-tasks">0</div><div class="stat-lbl">Tasks Today</div></div>
+      <div class="stat-card"><div class="stat-val purple" id="hs-models">3</div><div class="stat-lbl">Models Active</div></div>
+      <div class="stat-card"><div class="stat-val cyan" id="hs-uptime">99.9%</div><div class="stat-lbl">Uptime</div></div>
     </div>
-    <button class="home-cta" onclick="goPage('dashboard')">Enter Dashboard →</button>
+    <button class="cta" onclick="showPage('dashboard')">Enter Dashboard →</button>
   </div>
-  <div class="home-agents-row" id="home-agents-row"></div>
+  <div class="home-agents" id="home-agents"></div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     PAGE 2 — DASHBOARD
-════════════════════════════════════════════ -->
+<!-- ════ PAGE 2 — DASHBOARD ════ -->
 <section class="page" id="page-dashboard">
-  <div class="dash-sidebar">
-    <div class="sidebar-section-lbl">Main</div>
-    <div class="sidebar-item active" data-view="overview"  onclick="showDashView('overview')"><span class="sidebar-icon">📊</span>Overview</div>
-    <div class="sidebar-item"        data-view="agents"    onclick="showDashView('agents')"><span class="sidebar-icon">🤖</span>Agents</div>
-    <div class="sidebar-item"        data-view="pipeline"  onclick="showDashView('pipeline')"><span class="sidebar-icon">🔄</span>Pipeline</div>
-    <div class="sidebar-item"        data-view="tasks"     onclick="showDashView('tasks')"><span class="sidebar-icon">📋</span>Tasks</div>
-    <div class="sidebar-section-lbl" style="margin-top:8px">Analytics</div>
-    <div class="sidebar-item"        data-view="chatlogs"  onclick="showDashView('chatlogs')"><span class="sidebar-icon">💬</span>Chat Logs</div>
-    <div class="sidebar-item"        data-view="models"    onclick="showDashView('models')"><span class="sidebar-icon">🧠</span>Models</div>
-    <div class="sidebar-item"        data-view="usage"     onclick="showDashView('usage')"><span class="sidebar-icon">💰</span>Usage &amp; Cost</div>
-    <div class="sidebar-section-lbl" style="margin-top:8px">System</div>
-    <div class="sidebar-item"        data-view="settings"  onclick="showDashView('settings')"><span class="sidebar-icon">⚙️</span>Settings</div>
-    <div class="sidebar-item"                              onclick="goPage('home')"><span class="sidebar-icon">🏠</span>Home</div>
-  </div>
+  <aside class="sidebar">
+    <div class="sb-brand"><div class="nav-mark">N</div><span class="sb-brand-text">NEXUS AI</span></div>
+    <div class="sb-group">Main</div>
+    <div class="sb-item active" data-view="overview" onclick="showView('overview')"><span class="sb-ico">▦</span>Overview</div>
+    <div class="sb-item" data-view="agents"   onclick="showView('agents')"><span class="sb-ico">◈</span>Agents</div>
+    <div class="sb-item" data-view="pipeline" onclick="showView('pipeline')"><span class="sb-ico">⇄</span>Pipeline</div>
+    <div class="sb-item" data-view="tasks"    onclick="showView('tasks')"><span class="sb-ico">☑</span>Tasks</div>
+    <div class="sb-group">Analytics</div>
+    <div class="sb-item" data-view="chatlogs" onclick="showView('chatlogs')"><span class="sb-ico">✎</span>Chat Logs</div>
+    <div class="sb-item" data-view="models"   onclick="showView('models')"><span class="sb-ico">◊</span>Models</div>
+    <div class="sb-item" data-view="usage"    onclick="showView('usage')"><span class="sb-ico">$</span>Usage &amp; Cost</div>
+    <div class="sb-group">System</div>
+    <div class="sb-item" data-view="settings" onclick="showView('settings')"><span class="sb-ico">⚙</span>Settings</div>
+    <div class="sb-item" onclick="showPage('home')"><span class="sb-ico">⌂</span>Home</div>
+  </aside>
   <div class="dash-main">
-    <div class="dash-topbar">
-      <input class="dash-search" type="text" placeholder="Search agents, tasks, logs…">
-      <div class="topbar-right">
-        <button class="notif-btn">🔔<span class="notif-badge"></span></button>
-        <div class="sync-tag" id="sync-tag">SYNCED 0s AGO</div>
+    <div class="dash-top">
+      <input class="dash-search" placeholder="Search agents, tasks, logs…">
+      <div class="dash-top-right">
+        <button class="icon-btn">⊕</button>
+        <span class="sync" id="sync">synced just now</span>
       </div>
     </div>
-    <div class="dash-content">
+    <div class="dash-body">
 
-      <!-- ── OVERVIEW VIEW ── -->
-      <div class="dash-view dv-active" id="dash-view-overview">
-        <div class="dash-row dash-row-3">
-          <div class="d-card">
-            <div class="dc-title">Task Progress</div>
-            <div class="dc-sub">ACTIVE TASKS</div>
-            <div id="task-progress-list"></div>
+      <!-- OVERVIEW -->
+      <div class="dv active" id="view-overview">
+        <div class="dv-head"><div class="dv-h1">Overview</div><div class="dv-h2">SYSTEM STATUS · LIVE</div></div>
+        <div class="grid g3" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-t">Task Progress</div>
+            <div class="card-s">OVERALL COMPLETION</div>
+            <div class="big-num" id="ov-progress">67%</div>
+            <div class="bar"><div class="bar-fill" id="ov-progress-bar" style="width:67%"></div></div>
           </div>
-          <div class="d-card">
-            <div class="dc-title">Performance</div>
-            <div class="dc-sub">ACTIVITY LAST 24H</div>
-            <canvas id="perf-canvas"></canvas>
+          <div class="card">
+            <div class="card-t">Today's Tasks</div>
+            <div class="card-s">ACTIVE WORK</div>
+            <div id="ov-tasks"></div>
           </div>
-          <div class="d-card">
-            <div class="dc-title">Token Usage</div>
-            <div class="dc-sub">DAILY CONSUMPTION</div>
-            <div class="token-bars" id="token-bars"></div>
-            <div style="margin-top:14px">
-              <div class="cost-row"><span class="cost-lbl">Cost Today</span><span class="cost-val" id="cost-today">$0.00</span></div>
-              <div class="cost-row"><span class="cost-lbl">Cost Month</span><span class="cost-val" id="cost-month">$0.00</span></div>
+          <div class="card">
+            <div class="card-t">Performance</div>
+            <div class="card-s">ACTIVITY · 24H</div>
+            <canvas id="perf-canvas" style="width:100%;height:96px;display:block"></canvas>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-t">Agent Status</div>
+          <div class="card-s">ALL 9 AGENTS</div>
+          <div class="grid g3" id="ov-agents"></div>
+        </div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-t">Token Usage</div>
+            <div class="card-s">DAILY CONSUMPTION</div>
+            <div id="ov-tokens"></div>
+            <div style="margin-top:12px">
+              <div class="cost-row"><span>Cost Today</span><span class="v" id="ov-cost-d">$0.12</span></div>
+              <div class="cost-row"><span>Cost Month</span><span class="v" id="ov-cost-m">$3.48</span></div>
             </div>
           </div>
-        </div>
-        <div class="d-card">
-          <div class="dc-title">Agent Status</div>
-          <div class="dc-sub">ALL 9 AGENTS</div>
-          <div class="dash-row dash-row-3x3" id="agent-grid"></div>
-        </div>
-        <div class="dash-row dash-row-2">
-          <div class="d-card">
-            <div class="dc-title">Active Pipeline</div>
-            <div class="dc-sub">CURRENT WORKFLOW</div>
-            <div class="pip-flow" id="pip-flow"></div>
-          </div>
-          <div class="d-card">
-            <div class="dc-title">Live Feed</div>
-            <div class="dc-sub">RECENT EVENTS</div>
-            <div id="live-feed" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto"></div>
+          <div class="card">
+            <div class="card-t">Active Pipeline</div>
+            <div class="card-s">CURRENT WORKFLOW</div>
+            <div class="pipe" id="ov-pipe"></div>
           </div>
         </div>
       </div>
 
-      <!-- ── AGENTS VIEW ── -->
-      <div class="dash-view" id="dash-view-agents">
-        <div class="dv-header">
-          <div class="dv-title">All Agents</div>
-          <div class="dv-sub">9 AGENTS REGISTERED</div>
-        </div>
-        <div class="d-card">
-          <div class="dash-row dash-row-3x3" id="agents-view-grid"></div>
+      <!-- AGENTS -->
+      <div class="dv" id="view-agents">
+        <div class="dv-head"><div class="dv-h1">Agents</div><div class="dv-h2">9 AGENTS REGISTERED</div></div>
+        <div class="grid g3" id="agents-grid"></div>
+      </div>
+
+      <!-- PIPELINE -->
+      <div class="dv" id="view-pipeline">
+        <div class="dv-head"><div class="dv-h1">Pipeline</div><div class="dv-h2">WORKFLOW STEPS</div></div>
+        <div class="card" style="margin-bottom:16px"><div class="pipe" id="pl-pipe"></div></div>
+        <div class="card">
+          <div class="card-t">Step Log</div><div class="card-s">RECENT ACTIVITY</div>
+          <div id="pl-log"></div>
         </div>
       </div>
 
-      <!-- ── PIPELINE VIEW ── -->
-      <div class="dash-view" id="dash-view-pipeline">
-        <div class="dv-header">
-          <div class="dv-title">Pipeline</div>
-          <div class="dv-sub">ACTIVE WORKFLOW STEPS</div>
-        </div>
-        <div class="d-card" style="padding:28px 24px">
-          <div class="pip-flow" id="pip-flow-2" style="gap:4px"></div>
-        </div>
-        <div class="d-card">
-          <div class="dc-title">Pipeline Log</div>
-          <div class="dc-sub">STEP HISTORY</div>
-          <div id="pipeline-log" style="display:flex;flex-direction:column;gap:8px"></div>
-        </div>
+      <!-- TASKS -->
+      <div class="dv" id="view-tasks">
+        <div class="dv-head"><div class="dv-h1">Tasks</div><div class="dv-h2">ACTIVE &amp; QUEUED</div></div>
+        <div class="card"><div id="tasks-list"></div></div>
       </div>
 
-      <!-- ── TASKS VIEW ── -->
-      <div class="dash-view" id="dash-view-tasks">
-        <div class="dv-header">
-          <div class="dv-title">Tasks</div>
-          <div class="dv-sub">ALL ACTIVE &amp; QUEUED TASKS</div>
-        </div>
-        <div class="d-card">
-          <div id="tasks-view-list"></div>
-        </div>
+      <!-- CHAT LOGS -->
+      <div class="dv" id="view-chatlogs">
+        <div class="dv-head"><div class="dv-h1">Chat Logs</div><div class="dv-h2">AGENT CONVERSATIONS</div></div>
+        <div class="card"><div id="logs-list"></div></div>
       </div>
 
-      <!-- ── CHAT LOGS VIEW ── -->
-      <div class="dash-view" id="dash-view-chatlogs">
-        <div class="dv-header">
-          <div class="dv-title">Chat Logs</div>
-          <div class="dv-sub">AGENT CONVERSATION HISTORY</div>
-        </div>
-        <div class="d-card">
-          <div id="chatlogs-view-list" style="display:flex;flex-direction:column;gap:8px"></div>
-        </div>
+      <!-- MODELS -->
+      <div class="dv" id="view-models">
+        <div class="dv-head"><div class="dv-h1">Models</div><div class="dv-h2">AI PROVIDERS</div></div>
+        <div class="grid g2" id="models-grid"></div>
       </div>
 
-      <!-- ── MODELS VIEW ── -->
-      <div class="dash-view" id="dash-view-models">
-        <div class="dv-header">
-          <div class="dv-title">AI Models</div>
-          <div class="dv-sub">ACTIVE PROVIDERS &amp; MODELS</div>
-        </div>
-        <div class="dash-row dash-row-2">
-          <div class="d-card">
-            <div class="dc-title">Groq</div>
-            <div class="dc-sub">PRIMARY PROVIDER</div>
-            <div style="margin-top:10px">
-              <div class="cost-row"><span class="cost-lbl">Model</span><span class="cost-val" style="color:var(--green)">llama-3.3-70b-versatile</span></div>
-              <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● ONLINE</span></div>
-              <div class="cost-row"><span class="cost-lbl">RPM Limit</span><span class="cost-val">30</span></div>
-            </div>
+      <!-- USAGE -->
+      <div class="dv" id="view-usage">
+        <div class="dv-head"><div class="dv-h1">Usage &amp; Cost</div><div class="dv-h2">TOKENS &amp; SPEND</div></div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-t">Token Breakdown</div><div class="card-s">BY PROVIDER · TODAY</div>
+            <div id="us-tokens"></div>
           </div>
-          <div class="d-card">
-            <div class="dc-title">OpenRouter</div>
-            <div class="dc-sub">FALLBACK PROVIDER</div>
-            <div style="margin-top:10px">
-              <div class="cost-row"><span class="cost-lbl">Model</span><span class="cost-val" style="color:var(--orange)">dolphin-mistral</span></div>
-              <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● ONLINE</span></div>
-              <div class="cost-row"><span class="cost-lbl">$/1M tokens</span><span class="cost-val">$0.20</span></div>
-            </div>
-          </div>
-          <div class="d-card">
-            <div class="dc-title">Gemini</div>
-            <div class="dc-sub">VISION PROVIDER</div>
-            <div style="margin-top:10px">
-              <div class="cost-row"><span class="cost-lbl">Model</span><span class="cost-val" style="color:var(--cyan)">gemini-2.0-flash-lite</span></div>
-              <div class="cost-row"><span class="cost-lbl">Vision</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● gemini-1.5-flash</span></div>
-              <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● ONLINE</span></div>
-            </div>
-          </div>
-          <div class="d-card">
-            <div class="dc-title">Claude</div>
-            <div class="dc-sub">ORCHESTRATION</div>
-            <div style="margin-top:10px">
-              <div class="cost-row"><span class="cost-lbl">Model</span><span class="cost-val" style="color:var(--purple)">claude-sonnet-4-6</span></div>
-              <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace">● ONLINE</span></div>
-              <div class="cost-row"><span class="cost-lbl">$/1M tokens</span><span class="cost-val">$3.00</span></div>
-            </div>
+          <div class="card">
+            <div class="card-t">Cost Summary</div><div class="card-s">CURRENT PERIOD</div>
+            <div class="cost-row"><span>Today</span><span class="v" id="us-d">$0.12</span></div>
+            <div class="cost-row"><span>This Week</span><span class="v" id="us-w">$0.84</span></div>
+            <div class="cost-row"><span>This Month</span><span class="v" id="us-m">$3.48</span></div>
+            <div class="cost-row"><span>Projected</span><span class="v" id="us-p" style="color:var(--yellow)">$3.60</span></div>
           </div>
         </div>
       </div>
 
-      <!-- ── USAGE VIEW ── -->
-      <div class="dash-view" id="dash-view-usage">
-        <div class="dv-header">
-          <div class="dv-title">Usage &amp; Cost</div>
-          <div class="dv-sub">TOKEN CONSUMPTION &amp; SPEND</div>
-        </div>
-        <div class="dash-row dash-row-2">
-          <div class="d-card">
-            <div class="dc-title">Token Breakdown</div>
-            <div class="dc-sub">BY PROVIDER TODAY</div>
-            <div class="token-bars" id="token-bars-2" style="margin-top:10px"></div>
+      <!-- SETTINGS -->
+      <div class="dv" id="view-settings">
+        <div class="dv-head"><div class="dv-h1">Settings</div><div class="dv-h2">CONFIGURATION</div></div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-t">Bot Settings</div><div class="card-s">DISCORD CONFIG</div>
+            <div class="cost-row"><span>Response delay</span><span class="v">2–4s</span></div>
+            <div class="cost-row"><span>Max tokens</span><span class="v">80</span></div>
+            <div class="cost-row"><span>Temperature</span><span class="v">0.9</span></div>
+            <div class="cost-row"><span>History turns</span><span class="v">4</span></div>
+            <div class="cost-row"><span>Last responses tracked</span><span class="v">5</span></div>
           </div>
-          <div class="d-card">
-            <div class="dc-title">Cost Summary</div>
-            <div class="dc-sub">CURRENT PERIOD</div>
-            <div style="margin-top:10px">
-              <div class="cost-row"><span class="cost-lbl">Today</span><span class="cost-val" id="cost-today-2">$0.00</span></div>
-              <div class="cost-row"><span class="cost-lbl">This Week</span><span class="cost-val" id="cost-week">$0.00</span></div>
-              <div class="cost-row"><span class="cost-lbl">This Month</span><span class="cost-val" id="cost-month-2">$0.00</span></div>
-              <div class="cost-row"><span class="cost-lbl">Projected</span><span class="cost-val" id="cost-projected" style="color:var(--yellow)">$0.00</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SETTINGS VIEW ── -->
-      <div class="dash-view" id="dash-view-settings">
-        <div class="dv-header">
-          <div class="dv-title">Settings</div>
-          <div class="dv-sub">SYSTEM CONFIGURATION</div>
-        </div>
-        <div class="dash-row dash-row-2">
-          <div class="d-card">
-            <div class="dc-title">API Keys</div>
-            <div class="dc-sub">PROVIDER CREDENTIALS</div>
-            <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-              <div>
-                <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:4px">GROQ_API_KEY</div>
-                <input type="password" placeholder="gsk_••••••••" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'JetBrains Mono',monospace;outline:none">
-              </div>
-              <div>
-                <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:4px">OPENROUTER_API_KEY</div>
-                <input type="password" placeholder="sk-or-••••••••" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'JetBrains Mono',monospace;outline:none">
-              </div>
-              <div>
-                <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:4px">GEMINI_API_KEY</div>
-                <input type="password" placeholder="AIza••••••••" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'JetBrains Mono',monospace;outline:none">
-              </div>
-            </div>
-          </div>
-          <div class="d-card">
-            <div class="dc-title">Bot Settings</div>
-            <div class="dc-sub">DISCORD CONFIGURATION</div>
-            <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-              <div class="cost-row"><span class="cost-lbl">Response delay</span><span class="cost-val">2–4s</span></div>
-              <div class="cost-row"><span class="cost-lbl">Max tokens</span><span class="cost-val">80</span></div>
-              <div class="cost-row"><span class="cost-lbl">Temperature</span><span class="cost-val">0.9</span></div>
-              <div class="cost-row"><span class="cost-lbl">History turns</span><span class="cost-val">6</span></div>
-              <div class="cost-row"><span class="cost-lbl">Last responses tracked</span><span class="cost-val">5</span></div>
-            </div>
+          <div class="card">
+            <div class="card-t">Providers</div><div class="card-s">FALLBACK ORDER</div>
+            <div class="cost-row"><span>Primary</span><span class="v" style="color:var(--green)">Groq · llama-3.3-70b</span></div>
+            <div class="cost-row"><span>Fallback</span><span class="v" style="color:var(--orange)">OpenRouter · Dolphin</span></div>
+            <div class="cost-row"><span>Vision</span><span class="v" style="color:var(--cyan)">Gemini · 1.5-flash</span></div>
+            <div class="cost-row"><span>Theme</span><span class="v">Dark · blue/purple</span></div>
           </div>
         </div>
       </div>
@@ -810,1044 +608,633 @@ html,body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     PAGE 3 — WORKFLOW
-════════════════════════════════════════════ -->
+<!-- ════ PAGE 3 — WORKFLOW ════ -->
 <section class="page" id="page-workflow">
-  <!-- Password gate -->
-  <div class="wf-gate" id="wf-gate">
-    <div class="wf-gate-icon">🔐</div>
-    <div class="wf-gate-title">Workflow Access</div>
-    <div class="wf-gate-sub">Enter password to access the node visualizer</div>
-    <div class="wf-pw-wrap">
-      <input class="wf-pw" type="password" id="wf-pw" placeholder="Password" onkeydown="if(event.key==='Enter')unlockWorkflow()">
-    </div>
-    <div class="wf-error" id="wf-error">Incorrect password. Try again.</div>
-    <button class="wf-unlock-btn" onclick="unlockWorkflow()">Unlock →</button>
+  <div class="pw-modal" id="pw-modal">
+    <div class="pw-lock">🔒</div>
+    <div class="pw-title">RESTRICTED ACCESS</div>
+    <div class="pw-sub">Enter password to view the workflow graph</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')checkPassword()">
+    <button class="pw-btn" onclick="checkPassword()">Enter</button>
+    <div class="pw-err" id="pw-err"></div>
   </div>
-
-  <!-- Workflow canvas (shown after unlock) -->
-  <div class="wf-canvas-area" id="wf-canvas-area">
-    <div class="wf-toolbar">
-      <div class="wf-toolbar-title">NEXUS Agent Workflow</div>
-      <div class="wf-badge">LIVE</div>
-      <div style="margin-left:auto;font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">Click node for details</div>
+  <div class="wf-stage" id="wf-stage">
+    <div class="wf-bar">
+      <span class="wf-bar-t">NEXUS Agent Workflow</span>
+      <span class="wf-tag">LIVE</span>
+      <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)">click node for details</span>
     </div>
     <canvas id="wf-canvas"></canvas>
   </div>
-
-  <!-- Node detail panel -->
   <div class="wf-panel" id="wf-panel">
-    <div class="wf-panel-close" onclick="closeWfPanel()">✕</div>
-    <div id="wf-panel-content"></div>
+    <button class="wf-px" onclick="closeWfPanel()">✕</button>
+    <div id="wf-panel-body"></div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     PAGE 4 — CHAT
-════════════════════════════════════════════ -->
+<!-- ════ PAGE 4 — CHAT ════ -->
 <section class="page" id="page-chat">
-  <!-- Left: Agent list -->
   <div class="chat-left">
-    <div class="chat-left-head">
-      <div class="chat-left-title">Agents</div>
-      <label class="group-toggle">
-        <input type="checkbox" id="group-chat-toggle" onchange="toggleGroupChat()"> Group
-      </label>
+    <div class="cl-search"><input placeholder="Search agents…" id="cl-search" oninput="filterAgents()"></div>
+    <div class="cl-list" id="cl-list"></div>
+    <div class="cl-bottom">
+      <button class="cl-group-btn" id="group-btn" onclick="toggleGroup()">⊕ Group Chat</button>
     </div>
-    <div class="agent-list" id="chat-agent-list"></div>
   </div>
-
-  <!-- Center: Chat window -->
-  <div class="chat-center">
-    <div class="chat-topbar">
-      <div class="chat-agent-orb" id="chat-active-orb" style="background:rgba(168,85,247,0.2)">🤖</div>
-      <div class="chat-agent-name" id="chat-active-name">Select an Agent</div>
-      <select class="chat-model-select" id="chat-model-select">
+  <div class="chat-mid">
+    <div class="cm-top">
+      <div class="cm-orb" id="cm-orb" style="background:rgba(79,142,255,0.15)">🤖</div>
+      <div>
+        <div class="cm-name" id="cm-name">Select an agent</div>
+        <div class="cm-role" id="cm-role">—</div>
+      </div>
+      <select class="cm-select" id="cm-model">
         <option value="groq">Groq LLaMA 3.3</option>
-        <option value="openrouter">OpenRouter Dolphin</option>
+        <option value="dolphin">OpenRouter Dolphin</option>
         <option value="gemini">Gemini Flash</option>
-        <option value="claude">Claude Sonnet</option>
+        <option value="claude">Claude Haiku</option>
       </select>
-      <div class="chat-status-pill" id="chat-status-pill">ONLINE</div>
+      <span class="cm-pill">ONLINE</span>
     </div>
-    <div class="chat-msgs" id="chat-msgs">
-      <div style="text-align:center;color:var(--text4);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:40px">
+    <div class="cm-msgs" id="cm-msgs">
+      <div style="margin:auto;text-align:center;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:12px">
         Select an agent to start chatting
       </div>
     </div>
-    <div class="chat-bottom">
-      <div class="chat-input-row">
-        <button class="chat-icon-btn" title="Upload image">📎</button>
-        <textarea class="chat-input" id="chat-input" placeholder="Message an agent…" rows="1"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
-          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-        <button class="chat-icon-btn" title="Voice">🎤</button>
-        <button class="chat-send-btn" onclick="sendChat()">➤</button>
-      </div>
+    <div class="cm-input">
+      <button class="cm-ibtn" title="Upload image">🖼</button>
+      <textarea id="cm-text" rows="1" placeholder="Type a message…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+      <button class="cm-ibtn" title="Voice">🎙</button>
+      <button class="cm-send" onclick="sendChat()">➤</button>
     </div>
   </div>
-
-  <!-- Right: Agent details -->
-  <div class="chat-right">
-    <div class="cr-section">
-      <div class="cr-title">Agent Info</div>
-      <div id="cr-agent-info">
-        <div style="color:var(--text4);font-size:11px;font-family:'JetBrains Mono',monospace">No agent selected</div>
-      </div>
-    </div>
-    <div class="cr-section">
-      <div class="cr-title">Platforms</div>
-      <div id="cr-platforms"></div>
-    </div>
-    <div class="cr-section">
-      <div class="cr-title">Quick Actions</div>
-      <button class="cr-action-btn" onclick="addChatMsg('status','Garv bhai status kya hai?')">📊 Request Status</button>
-      <button class="cr-action-btn" onclick="addChatMsg('status','Kya kaam chal rha hai?')">🔄 Current Task</button>
-      <button class="cr-action-btn" onclick="addChatMsg('status','Aaj kitne tokens use hue?')">🧮 Token Usage</button>
+  <div class="chat-right" id="chat-right">
+    <div style="text-align:center;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:11px;margin-top:30px">
+      No agent selected
     </div>
   </div>
 </section>
 
 <script>
-/* ══════════════════════════════════════════
-   DATA & AGENTS
-═══════════════════════════════════════════ */
+/* ══ AGENTS (matches Discord personality_map) ══ */
 const AGENTS = [
-  {id:'aria',  name:'ARIA',  emoji:'🌐', color:'#00EAFF', role:'Orchestrator',   model:'Groq LLaMA', platforms:['Discord','Slack','API']},
-  {id:'nova',  name:'NOVA',  emoji:'✦',  color:'#A855F7', role:'Ideation',       model:'GPT-4o',     platforms:['Notion','Discord']},
-  {id:'echo',  name:'ECHO',  emoji:'🔊', color:'#EC4899', role:'Copy & Content', model:'Claude',     platforms:['Drive','Gmail']},
-  {id:'blaze', name:'BLAZE', emoji:'🔥', color:'#FF8C42', role:'Design Ops',     model:'Gemini',     platforms:['Figma','Canva']},
-  {id:'sage',  name:'SAGE',  emoji:'🌿', color:'#00FF94', role:'Research',       model:'Perplexity', platforms:['Browser','Drive']},
-  {id:'void',  name:'VOID',  emoji:'🕳', color:'#6366F1', role:'Dev & Code',     model:'Codex',      platforms:['GitHub','VSCode']},
-  {id:'hex',   name:'HEX',   emoji:'💎', color:'#FCD34D', role:'Data & Finance', model:'Llama',      platforms:['Sheets','Excel']},
-  {id:'flux',  name:'FLUX',  emoji:'⚡', color:'#06B6D4', role:'Automation',     model:'n8n',        platforms:['Zapier','n8n']},
-  {id:'idea',  name:'IDEA',  emoji:'💡', color:'#F472B6', role:'Concepts',       model:'Mistral',    platforms:['Miro','FigJam']},
+  {id:'aria', name:'ARIA', emoji:'🎯', color:'#4F8EFF', role:'Orchestrator',     model:'Groq LLaMA',    platforms:['Discord','Slack','API']},
+  {id:'bryn', name:'BRYN', emoji:'📊', color:'#A855F7', role:'Strategist',       model:'Groq LLaMA',    platforms:['Notion','Miro']},
+  {id:'idea', name:'IDEA', emoji:'💡', color:'#FCD34D', role:'Ideation',         model:'Groq LLaMA',    platforms:['FigJam','Miro']},
+  {id:'desi', name:'DESI', emoji:'🎨', color:'#EC4899', role:'Design Critic',    model:'Gemini Flash',  platforms:['Figma','Canva']},
+  {id:'copy', name:'COPY', emoji:'✍️', color:'#00FF94', role:'Copywriter',       model:'Claude Haiku',  platforms:['Docs','Gmail']},
+  {id:'mova', name:'MOVA', emoji:'🎬', color:'#FF8C42', role:'Motion Designer',  model:'Groq LLaMA',    platforms:['After Effects']},
+  {id:'soci', name:'SOCI', emoji:'📱', color:'#00EAFF', role:'Social Media',     model:'OpenRouter',    platforms:['Instagram','X']},
+  {id:'nova', name:'NOVA', emoji:'👥', color:'#F472B6', role:'Talent / HR',      model:'Groq LLaMA',    platforms:['LinkedIn']},
+  {id:'arch', name:'ARCH', emoji:'⚙️', color:'#6366F1', role:'Systems Architect',model:'Groq LLaMA',    platforms:['GitHub','n8n']},
 ];
+const A = id => AGENTS.find(a => a.id === id);
 
-let currentPage = 'home';
-let selectedAgent = null;
-let isGroupChat = false;
-let chatHistory = {};
-let agentData = [];
-let usageData = {};
-let pipelineData = {};
-let lastSync = Date.now();
+let currentPage='home', currentAgent=null, groupMode=false;
+let agentData=[], usageData={}, pipelineData={}, chatLog={};
+let wfUnlocked=false;
+const WF_PASSWORD='Garvit123##';
 
-/* ══════════════════════════════════════════
-   NAVIGATION
-═══════════════════════════════════════════ */
-function goPage(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-link').forEach(l => {
-    l.className = 'nav-link';
-    if (l.dataset.page === page) l.classList.add('active-' + page);
+/* ══ NAVIGATION ══ */
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.nav===page);
   });
-  const el = document.getElementById('page-' + page);
-  if (el) el.classList.add('active');
-  currentPage = page;
-  if (page === 'workflow' && document.getElementById('wf-canvas-area').classList.contains('unlocked')) {
-    setTimeout(drawWorkflow, 100);
-  }
+  currentPage=page;
+  location.hash=page;
+  if(page==='workflow' && wfUnlocked) setTimeout(drawWorkflow,80);
+  if(page==='dashboard') setTimeout(drawPerf,80);
+}
+window.addEventListener('hashchange',()=>{
+  const h=location.hash.replace('#','');
+  if(['home','dashboard','workflow','chat'].includes(h) && h!==currentPage) showPage(h);
+});
+
+function toggleTheme(){
+  const root=document.documentElement;
+  const dark=root.getAttribute('data-theme')==='dark';
+  root.setAttribute('data-theme', dark?'light':'dark');
+  document.getElementById('theme-btn').textContent= dark?'☀':'☾';
 }
 
-function showDashView(view) {
-  // Switch sidebar active state
-  document.querySelectorAll('.dash-sidebar .sidebar-item').forEach(item => {
-    item.classList.remove('active');
-    if (item.dataset.view === view) item.classList.add('active');
-  });
-  // Switch view
-  document.querySelectorAll('.dash-view').forEach(v => v.classList.remove('dv-active'));
-  const target = document.getElementById('dash-view-' + view);
-  if (target) target.classList.add('dv-active');
-  // Render view-specific content
-  if (view === 'agents')    renderAgentsView();
-  if (view === 'pipeline')  renderPipelineView();
-  if (view === 'tasks')     renderTasksView();
-  if (view === 'chatlogs')  renderChatLogsView();
-  if (view === 'usage')     renderUsageView();
-  if (view === 'overview')  { renderPerfChart(); }
+/* ══ HOME SPHERE ══ */
+const sCanvas=document.getElementById('sphere-canvas');
+const sctx=sCanvas.getContext('2d');
+function resizeSphere(){
+  const r=sCanvas.getBoundingClientRect();
+  sCanvas.width=r.width*devicePixelRatio;
+  sCanvas.height=r.height*devicePixelRatio;
+  sctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
 }
-
-function renderAgentsView() {
-  const el = document.getElementById('agents-view-grid');
-  if (!el || el.innerHTML) return;
-  el.innerHTML = AGENTS.map(a => {
-    const d = agentData.find(x => x.id === a.id) || {};
-    const status = d.status || 'active';
-    const statusColor = status==='active'?'var(--green)':status==='busy'?'var(--orange)':'var(--text4)';
-    return `
-      <div class="agent-mini" onclick="openAgentChat('${a.id}');goPage('chat')">
-        <div class="am-orb" style="background:${a.color}18;border:1px solid ${a.color}33">${a.emoji}</div>
-        <div style="flex:1;min-width:0">
-          <div class="am-name">${a.name}</div>
-          <div class="am-model">${a.role} · ${a.model}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <div class="am-status-dot" style="background:${statusColor};box-shadow:0 0 6px ${statusColor}"></div>
-          <span style="font-size:9px;color:${statusColor};font-family:'JetBrains Mono',monospace">${status.toUpperCase()}</span>
-        </div>
-      </div>`;
-  }).join('');
+addEventListener('resize',resizeSphere);
+setTimeout(resizeSphere,120);
+const PTS=[];
+for(let i=0;i<480;i++){
+  const t=Math.acos(1-2*(i+0.5)/480), p=Math.PI*(1+Math.sqrt(5))*i;
+  PTS.push({x:Math.sin(t)*Math.cos(p),y:Math.sin(t)*Math.sin(p),z:Math.cos(t)});
 }
-
-function renderPipelineView() {
-  const el = document.getElementById('pip-flow-2');
-  if (!el) return;
-  const steps = pipelineData.steps || [
-    {emoji:'🔍',label:'Scrape',status:'done'},
-    {emoji:'🧠',label:'Match',status:'done'},
-    {emoji:'✍',label:'Tailor',status:'current'},
-    {emoji:'🔐',label:'Auth',status:'pending'},
-    {emoji:'📤',label:'Apply',status:'pending'},
-    {emoji:'📊',label:'Log',status:'pending'},
-  ];
-  el.innerHTML = steps.map((s,i) => `
-    ${i>0?`<div class="pip-arrow ${steps[i-1].status==='done'?'done-arrow':''}"></div>`:''}
-    <div class="pip-step">
-      <div class="pip-orb ${s.status}">${s.emoji}</div>
-      <div class="pip-lbl">${s.label}</div>
-    </div>`).join('');
-  const log = document.getElementById('pipeline-log');
-  if (log && !log.innerHTML) {
-    const entries = [
-      {icon:'✅',text:'Scrape completed — 47 jobs found',time:'10:32'},
-      {icon:'✅',text:'Match completed — 12 jobs scored 70+',time:'10:33'},
-      {icon:'⏳',text:'Tailor in progress — resume for Zepto',time:'10:35'},
-    ];
-    log.innerHTML = entries.map(e => `
-      <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:16px">${e.icon}</span>
-        <div style="flex:1;font-size:12px;color:var(--text2)">${e.text}</div>
-        <div style="font-size:10px;color:var(--text4);font-family:'JetBrains Mono',monospace">${e.time}</div>
-      </div>`).join('');
-  }
-}
-
-function renderTasksView() {
-  const el = document.getElementById('tasks-view-list');
-  if (!el || el.innerHTML) return;
-  const tasks = [
-    {agent:'ARIA',emoji:'🌐',color:'#00EAFF',task:'Orchestrate today\'s run',status:'active',pct:60},
-    {agent:'BLAZE',emoji:'🔥',color:'#FF8C42',task:'Export Figma brand kit',status:'busy',pct:40},
-    {agent:'ECHO',emoji:'🔊',color:'#EC4899',task:'Write 5 LinkedIn posts',status:'busy',pct:75},
-    {agent:'SAGE',emoji:'🌿',color:'#00FF94',task:'Research Zepto JD',status:'active',pct:90},
-    {agent:'VOID',emoji:'🕳',color:'#6366F1',task:'Push dashboard to GitHub',status:'active',pct:100},
-    {agent:'HEX',emoji:'💎',color:'#FCD34D',task:'Update applied_jobs.xlsx',status:'idle',pct:0},
-  ];
-  el.innerHTML = tasks.map(t => `
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-      <div style="width:32px;height:32px;border-radius:9px;background:${t.color}18;border:1px solid ${t.color}33;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${t.emoji}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${t.task}</div>
-        <div class="prog-bar" style="height:4px"><div class="prog-fill" style="width:${t.pct}%"></div></div>
-      </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:9px;font-family:'JetBrains Mono',monospace;color:${t.color}">${t.agent}</div>
-        <div style="font-size:11px;color:var(--orange);font-family:'JetBrains Mono',monospace">${t.pct}%</div>
-      </div>
-    </div>`).join('');
-}
-
-function renderChatLogsView() {
-  const el = document.getElementById('chatlogs-view-list');
-  if (!el || el.innerHTML) return;
-  const logs = [
-    {agent:'ARIA',emoji:'🌐',color:'#00EAFF',msg:'Pipeline started for today.',time:'10:30'},
-    {agent:'NOVA',emoji:'✦',color:'#A855F7',msg:'Bhai ye concept kaafi fresh hai, try karo.',time:'10:28'},
-    {agent:'BLAZE',emoji:'🔥',color:'#FF8C42',msg:'Figma file export ho gayi.',time:'10:25'},
-    {agent:'ECHO',emoji:'🔊',color:'#EC4899',msg:'Yaar 5 posts ready hain, check karo.',time:'10:20'},
-    {agent:'SAGE',emoji:'🌿',color:'#00FF94',msg:'Zepto ki JD analyze ki — match 82%.',time:'10:15'},
-  ];
-  el.innerHTML = logs.map(l => `
-    <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div style="width:28px;height:28px;border-radius:8px;background:${l.color}18;border:1px solid ${l.color}33;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${l.emoji}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:10px;font-weight:600;color:${l.color};font-family:'JetBrains Mono',monospace;margin-bottom:2px">${l.agent}</div>
-        <div style="font-size:12px;color:var(--text2)">${l.msg}</div>
-      </div>
-      <div style="font-size:9px;color:var(--text4);font-family:'JetBrains Mono',monospace;flex-shrink:0">${l.time}</div>
-    </div>`).join('');
-}
-
-function renderUsageView() {
-  const tb2 = document.getElementById('token-bars-2');
-  if (tb2 && !tb2.innerHTML) {
-    const bars = [
-      {lbl:'Groq',       val:45000, max:100000, col:'#00FF94'},
-      {lbl:'OpenRouter', val:28000, max:100000, col:'#FF8C42'},
-      {lbl:'Gemini',     val:12000, max:100000, col:'#A855F7'},
-      {lbl:'Claude',     val:8000,  max:100000, col:'#00EAFF'},
-    ];
-    tb2.innerHTML = bars.map(b => `
-      <div class="tb-row">
-        <span class="tb-lbl">${b.lbl}</span>
-        <div class="tb-bar"><div class="tb-fill" style="width:${Math.round(b.val/b.max*100)}%;background:linear-gradient(90deg,${b.col},${b.col}88)"></div></div>
-        <span class="tb-val">${(b.val/1000).toFixed(0)}K</span>
-      </div>`).join('');
-  }
-  const costDay = usageData.cost_today || 0.12;
-  const costMo  = usageData.cost_month || 3.48;
-  const el1 = document.getElementById('cost-today-2');
-  const el2 = document.getElementById('cost-month-2');
-  const el3 = document.getElementById('cost-week');
-  const el4 = document.getElementById('cost-projected');
-  if (el1) el1.textContent = '$' + costDay.toFixed(2);
-  if (el2) el2.textContent = '$' + costMo.toFixed(2);
-  if (el3) el3.textContent = '$' + (costDay * 7).toFixed(2);
-  if (el4) el4.textContent = '$' + (costDay * 30).toFixed(2);
-}
-
-/* ══════════════════════════════════════════
-   THEME
-═══════════════════════════════════════════ */
-function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  document.querySelector('.theme-btn').textContent = isDark ? '🌙' : '☀';
-}
-
-/* ══════════════════════════════════════════
-   SPHERE CANVAS
-═══════════════════════════════════════════ */
-const sCanvas = document.getElementById('sphere-canvas');
-const sctx = sCanvas.getContext('2d');
-function resizeSphere() {
-  const r = sCanvas.getBoundingClientRect();
-  sCanvas.width = r.width * window.devicePixelRatio;
-  sCanvas.height = r.height * window.devicePixelRatio;
-  sctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
-}
-window.addEventListener('resize', resizeSphere);
-setTimeout(resizeSphere, 100);
-
-const SPHERE_PTS = [];
-for (let i = 0; i < 500; i++) {
-  const theta = Math.acos(1 - 2 * (i + 0.5) / 500);
-  const phi = Math.PI * (1 + Math.sqrt(5)) * i;
-  SPHERE_PTS.push({x:Math.sin(theta)*Math.cos(phi), y:Math.sin(theta)*Math.sin(phi), z:Math.cos(theta)});
-}
-let sRot = 0;
-function drawSphere() {
-  const w = sCanvas.getBoundingClientRect().width;
-  const h = sCanvas.getBoundingClientRect().height;
-  if (!w || !h) { requestAnimationFrame(drawSphere); return; }
-  sctx.clearRect(0, 0, w, h);
-  const cx = w / 2, cy = h / 2;
-  const R = Math.min(w, h) * 0.32;
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  sRot += 0.004;
-  const c = Math.cos(sRot), s = Math.sin(sRot);
-  const c2 = Math.cos(sRot * 0.7), s2 = Math.sin(sRot * 0.7);
-
-  const proj = SPHERE_PTS.map(p => {
-    let x = p.x*c - p.z*s, z = p.x*s + p.z*c;
-    let y = p.y*c2 - z*s2; z = p.y*s2 + z*c2;
-    return {x, y, z};
-  }).sort((a, b) => a.z - b.z);
-
-  const bgGrad = sctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.5);
-  if (isDark) {
-    bgGrad.addColorStop(0, 'rgba(0,255,148,0.1)');
-    bgGrad.addColorStop(0.5, 'rgba(0,234,255,0.05)');
-    bgGrad.addColorStop(1, 'rgba(0,0,0,0)');
-  } else {
-    bgGrad.addColorStop(0, 'rgba(16,185,129,0.08)');
-    bgGrad.addColorStop(1, 'rgba(0,0,0,0)');
-  }
-  sctx.fillStyle = bgGrad;
-  sctx.fillRect(0, 0, w, h);
-
-  for (let i = 0; i < proj.length; i++) {
-    for (let j = i + 1; j < Math.min(i + 10, proj.length); j++) {
-      const a = proj[i], b = proj[j];
-      const dx = a.x-b.x, dy = a.y-b.y, dz = a.z-b.z;
-      const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
-      if (d < 0.4) {
-        const depth = (a.z + b.z) / 2;
-        const alpha = Math.max(0, (depth + 1) / 2) * (isDark ? 0.25 : 0.15) * (1 - d / 0.4);
-        const hue = isDark ? (140 + depth * 40) : (160 + depth * 30);
+let rot=0;
+function drawSphere(){
+  const r=sCanvas.getBoundingClientRect();
+  const w=r.width,h=r.height;
+  if(!w||!h){requestAnimationFrame(drawSphere);return;}
+  sctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
+  rot+=0.0042;
+  const c=Math.cos(rot),s=Math.sin(rot),c2=Math.cos(rot*0.6),s2=Math.sin(rot*0.6);
+  const proj=PTS.map(pt=>{
+    let x=pt.x*c-pt.z*s, z=pt.x*s+pt.z*c;
+    let y=pt.y*c2-z*s2; z=pt.y*s2+z*c2;
+    return {x,y,z};
+  }).sort((a,b)=>a.z-b.z);
+  for(let i=0;i<proj.length;i++){
+    for(let j=i+1;j<Math.min(i+9,proj.length);j++){
+      const a=proj[i],b=proj[j];
+      const d=Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+      if(d<0.42){
+        const dp=(a.z+b.z)/2, al=Math.max(0,(dp+1)/2)*0.3*(1-d/0.42);
         sctx.beginPath();
-        sctx.moveTo(cx + a.x*R, cy + a.y*R);
-        sctx.lineTo(cx + b.x*R, cy + b.y*R);
-        sctx.strokeStyle = `hsla(${hue},100%,60%,${alpha})`;
-        sctx.lineWidth = 0.7;
-        sctx.stroke();
+        sctx.moveTo(cx+a.x*R,cy+a.y*R);
+        sctx.lineTo(cx+b.x*R,cy+b.y*R);
+        sctx.strokeStyle=`hsla(${220+dp*40},100%,68%,${al})`;
+        sctx.lineWidth=0.7;sctx.stroke();
       }
     }
   }
-
-  proj.forEach(p => {
-    const depth = (p.z + 1) / 2;
-    const size = 0.8 + depth * 2.5;
-    const px = cx + p.x*R, py = cy + p.y*R;
-    if (depth > 0.4) {
-      const grad = sctx.createRadialGradient(px, py, 0, px, py, size * 4);
-      grad.addColorStop(0, isDark ? `hsla(${140+depth*60},100%,70%,${depth})` : `hsla(${160+depth*20},80%,50%,${depth*0.8})`);
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      sctx.fillStyle = grad;
-      sctx.beginPath(); sctx.arc(px, py, size * 3, 0, Math.PI * 2); sctx.fill();
+  proj.forEach(pt=>{
+    const dp=(pt.z+1)/2, sz=0.7+dp*2.6;
+    const px=cx+pt.x*R, py=cy+pt.y*R;
+    if(dp>0.4){
+      const g=sctx.createRadialGradient(px,py,0,px,py,sz*4);
+      g.addColorStop(0,`hsla(${230+dp*40},100%,72%,${dp})`);
+      g.addColorStop(1,'rgba(0,0,0,0)');
+      sctx.fillStyle=g;
+      sctx.beginPath();sctx.arc(px,py,sz*3,0,7);sctx.fill();
     }
-    sctx.fillStyle = isDark ? `hsla(${140+depth*60},100%,${65+depth*20}%,${0.5+depth*0.5})` : `hsla(${160+depth*20},80%,${40+depth*15}%,${0.5+depth*0.5})`;
-    sctx.beginPath(); sctx.arc(px, py, size, 0, Math.PI * 2); sctx.fill();
+    sctx.fillStyle=`hsla(${230+dp*40},100%,${66+dp*20}%,${0.5+dp*0.5})`;
+    sctx.beginPath();sctx.arc(px,py,sz,0,7);sctx.fill();
   });
-
-  sctx.strokeStyle = isDark ? 'rgba(0,255,148,0.12)' : 'rgba(16,185,129,0.15)';
-  sctx.lineWidth = 1;
-  sctx.beginPath(); sctx.arc(cx, cy, R * 1.05, 0, Math.PI * 2); sctx.stroke();
-  sctx.strokeStyle = isDark ? 'rgba(0,234,255,0.06)' : 'rgba(6,182,212,0.08)';
-  sctx.beginPath(); sctx.arc(cx, cy, R * 1.18, 0, Math.PI * 2); sctx.stroke();
-
+  sctx.strokeStyle='rgba(79,142,255,0.14)';sctx.lineWidth=1;
+  sctx.beginPath();sctx.arc(cx,cy,R*1.08,0,7);sctx.stroke();
   requestAnimationFrame(drawSphere);
 }
 drawSphere();
 
-/* ══════════════════════════════════════════
-   API FETCHING
-═══════════════════════════════════════════ */
-async function fetchAll() {
-  try {
-    const [agents, usage, pipeline] = await Promise.all([
-      fetch('/api/agents').then(r => r.json()).catch(() => []),
-      fetch('/api/usage').then(r => r.json()).catch(() => ({})),
-      fetch('/api/pipeline').then(r => r.json()).catch(() => ({})),
-    ]);
-    agentData = Array.isArray(agents) ? agents : [];
-    usageData = usage || {};
-    pipelineData = pipeline || {};
-    lastSync = Date.now();
-    renderAll();
-  } catch(e) {
-    console.warn('API fetch failed', e);
-  }
-}
-
-function renderAll() {
-  renderHomeStats();
-  renderHomeAgents();
-  renderDashboard();
-  updateSyncTag();
-}
-
-function updateSyncTag() {
-  const el = document.getElementById('sync-tag');
-  if (el) el.textContent = 'SYNCED JUST NOW';
-}
-
-/* ══════════════════════════════════════════
-   HOME PAGE
-═══════════════════════════════════════════ */
-function renderHomeStats() {
-  const online = agentData.filter(a => a.status === 'active' || a.status === 'busy').length || AGENTS.length;
-  const tasks = usageData.tasks_today || 0;
-  const models = usageData.models_active || 3;
-  const uptime = usageData.uptime || '99.9';
-
-  animCount('hs-online', online);
-  animCount('hs-tasks', tasks);
-  animCount('hs-models', models);
-  document.getElementById('hs-uptime').textContent = uptime + '%';
-}
-
-function animCount(id, target) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  let current = 0;
-  const step = Math.ceil(target / 30);
-  const timer = setInterval(() => {
-    current = Math.min(current + step, target);
-    el.textContent = current;
-    if (current >= target) clearInterval(timer);
-  }, 40);
-}
-
-function renderHomeAgents() {
-  const row = document.getElementById('home-agents-row');
-  if (!row) return;
-  row.innerHTML = AGENTS.map(a => {
-    const d = agentData.find(x => x.id === a.id);
-    const isOn = !d || d.status === 'active' || d.status === 'busy';
-    return `<div class="h-agent-dot" onclick="goPage('chat')">
-      <div class="h-agent-orb" style="border-color:${a.color}33;background:${a.color}08">
-        <span>${a.emoji}</span>
-        <div class="status-dot ${isOn?'on':'off'}"></div>
-      </div>
-      <div class="h-agent-name">${a.name}</div>
-    </div>`;
+function renderHome(){
+  const online=agentData.filter(a=>a.status&&a.status!=='offline').length||AGENTS.length;
+  document.getElementById('hs-agents').textContent=online;
+  document.getElementById('hs-tasks').textContent=usageData.tasks_today||0;
+  document.getElementById('hs-models').textContent=usageData.models_active||3;
+  document.getElementById('hs-uptime').textContent=(usageData.uptime||'99.9')+'%';
+  const row=document.getElementById('home-agents');
+  row.innerHTML=AGENTS.map(a=>{
+    const d=agentData.find(x=>x.id===a.id);
+    const on=!d||(d.status&&d.status!=='offline');
+    return `<div class="ha" onclick="openChat('${a.id}')">
+      <div class="ha-orb" style="background:${a.color}1f;border-color:${a.color}3a">${a.emoji}
+        <span class="ha-dot" style="background:${on?'var(--green)':'var(--text3)'}"></span></div>
+      <span class="ha-name">${a.name}</span></div>`;
   }).join('');
 }
 
-/* ══════════════════════════════════════════
-   DASHBOARD
-═══════════════════════════════════════════ */
-function renderDashboard() {
-  renderTaskProgress();
-  renderPerfChart();
-  renderTokenBars();
-  renderAgentGrid();
-  renderPipeline();
-  renderLiveFeed();
+/* ══ DASHBOARD VIEWS ══ */
+function showView(view){
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.toggle('active',i.dataset.view===view));
+  document.querySelectorAll('.dv').forEach(d=>d.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  if(view==='overview') drawPerf();
+  if(view==='agents')   renderAgentsView();
+  if(view==='pipeline') renderPipelineView();
+  if(view==='tasks')    renderTasksView();
+  if(view==='chatlogs') renderLogsView();
+  if(view==='models')   renderModelsView();
+  if(view==='usage')    renderUsageView();
 }
 
-function renderTaskProgress() {
-  const el = document.getElementById('task-progress-list');
-  if (!el) return;
-  const tasks = pipelineData.tasks || [
-    {name:'Brand Identity Design', pct:72},
-    {name:'Social Media Copy',     pct:45},
-    {name:'Client Presentation',   pct:88},
-    {name:'Website Redesign',      pct:23},
-  ];
-  el.innerHTML = tasks.slice(0,4).map(t => `
-    <div class="prog-item">
-      <div class="prog-head"><span>${t.name}</span><span>${t.pct}%</span></div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${t.pct}%"></div></div>
-    </div>`).join('');
+function statusBadge(st){
+  const map={active:['var(--green)','ACTIVE'],busy:['var(--orange)','BUSY'],
+    waiting:['var(--pink)','WAITING'],offline:['var(--text3)','OFFLINE'],idle:['var(--text3)','IDLE']};
+  const [c,l]=map[st]||map.active;
+  return `<span class="badge" style="background:${c}1f;color:${c}">
+    <span class="dot" style="background:${c}"></span>${l}</span>`;
 }
-
-function renderPerfChart() {
-  const cnv = document.getElementById('perf-canvas');
-  if (!cnv) return;
-  const ctx = cnv.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const W = cnv.parentElement.clientWidth - 36;
-  const H = 120;
-  cnv.width = W * dpr; cnv.height = H * dpr;
-  cnv.style.width = W + 'px'; cnv.style.height = H + 'px';
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, W, H);
-
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const pts = Array.from({length:24}, (_,i) => Math.floor(Math.random()*60+10));
-  const max = Math.max(...pts);
-  const pad = {l:8, r:8, t:10, b:20};
-  const gW = W - pad.l - pad.r, gH = H - pad.t - pad.b;
-
-  // grid lines
-  [0.25,0.5,0.75,1].forEach(f => {
-    const y = pad.t + gH * (1 - f);
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y);
-    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)';
-    ctx.lineWidth = 1; ctx.stroke();
-  });
-
-  // area fill
-  ctx.beginPath();
-  pts.forEach((v, i) => {
-    const x = pad.l + (i / (pts.length-1)) * gW;
-    const y = pad.t + gH * (1 - v / max);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  const last = pad.l + gW;
-  ctx.lineTo(last, H - pad.b);
-  ctx.lineTo(pad.l, H - pad.b);
-  ctx.closePath();
-  const grad = ctx.createLinearGradient(0, pad.t, 0, H);
-  grad.addColorStop(0, 'rgba(255,140,66,0.25)');
-  grad.addColorStop(1, 'rgba(255,140,66,0)');
-  ctx.fillStyle = grad; ctx.fill();
-
-  // line
-  ctx.beginPath();
-  pts.forEach((v, i) => {
-    const x = pad.l + (i / (pts.length-1)) * gW;
-    const y = pad.t + gH * (1 - v / max);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.strokeStyle = 'var(--orange)'; ctx.lineWidth = 2;
-  ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(255,140,66,0.5)';
-  ctx.stroke(); ctx.shadowBlur = 0;
-}
-
-function renderTokenBars() {
-  const el = document.getElementById('token-bars');
-  if (!el) return;
-  const bars = [
-    {lbl:'Groq',       val:usageData.groq_tokens      || 45000, max:100000, col:'#00FF94'},
-    {lbl:'OpenRouter', val:usageData.openrouter_tokens || 28000, max:100000, col:'#FF8C42'},
-    {lbl:'Gemini',     val:usageData.gemini_tokens     || 12000, max:100000, col:'#A855F7'},
-    {lbl:'Claude',     val:usageData.claude_tokens     || 8000,  max:100000, col:'#00EAFF'},
-  ];
-  el.innerHTML = bars.map(b => `
-    <div class="tb-row">
-      <span class="tb-lbl">${b.lbl}</span>
-      <div class="tb-bar"><div class="tb-fill" style="width:${Math.round(b.val/b.max*100)}%;background:linear-gradient(90deg,${b.col},${b.col}88)"></div></div>
-      <span class="tb-val">${(b.val/1000).toFixed(0)}K</span>
-    </div>`).join('');
-
-  const costDay = usageData.cost_today || 0.12;
-  const costMo  = usageData.cost_month || 3.48;
-  const cdEl = document.getElementById('cost-today');
-  const cmEl = document.getElementById('cost-month');
-  if (cdEl) cdEl.textContent = '$' + costDay.toFixed(2);
-  if (cmEl) cmEl.textContent = '$' + costMo.toFixed(2);
-}
-
-function renderAgentGrid() {
-  const el = document.getElementById('agent-grid');
-  if (!el) return;
-  el.innerHTML = AGENTS.map(a => {
-    const d = agentData.find(x => x.id === a.id) || {};
-    const status = d.status || 'active';
-    const statusColor = status==='active' ? 'var(--green)' : status==='busy' ? 'var(--orange)' : 'var(--text4)';
-    const statusLabel = status==='active' ? 'Online' : status==='busy' ? 'Busy' : 'Offline';
-    const tokens = d.tokens_used || Math.floor(Math.random()*8000+500);
-    return `
-      <div class="agent-mini" onclick="openAgentChat('${a.id}')">
-        <div class="am-orb" style="background:${a.color}18;border:1px solid ${a.color}33">${a.emoji}</div>
-        <div style="flex:1;min-width:0">
-          <div class="am-name">${a.name}</div>
-          <div class="am-model">${a.model}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-          <div style="display:flex;align-items:center;gap:4px">
-            <div class="am-status-dot" style="background:${statusColor};box-shadow:0 0 6px ${statusColor}"></div>
-            <span style="font-size:9px;color:${statusColor};font-family:'JetBrains Mono',monospace">${statusLabel}</span>
-          </div>
-          <div class="am-tokens">${(tokens/1000).toFixed(1)}K</div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function renderPipeline() {
-  const el = document.getElementById('pip-flow');
-  if (!el) return;
-  const steps = pipelineData.steps || [
-    {emoji:'🔍', label:'Scrape',   status:'done'},
-    {emoji:'🧠', label:'Match',    status:'done'},
-    {emoji:'✍', label:'Tailor',   status:'current'},
-    {emoji:'🔐', label:'Auth',     status:'pending'},
-    {emoji:'📤', label:'Apply',    status:'pending'},
-    {emoji:'📊', label:'Log',      status:'pending'},
-  ];
-  el.innerHTML = steps.map((s, i) => `
-    ${i > 0 ? `<div class="pip-arrow ${s.status==='done'||steps[i-1].status==='done'?'done-arrow':''}"></div>` : ''}
-    <div class="pip-step">
-      <div class="pip-orb ${s.status}">${s.emoji}</div>
-      <div class="pip-lbl">${s.label}</div>
-    </div>`).join('');
-}
-
-function renderLiveFeed() {
-  const el = document.getElementById('live-feed');
-  if (!el) return;
-  const events = [
-    {agent:'ARIA',  emoji:'🌐', color:'#00EAFF', text:'Pipeline check completed',   time:'just now'},
-    {agent:'NOVA',  emoji:'✦',  color:'#A855F7', text:'New concept ideated: "Brand X launch"', time:'2m ago'},
-    {agent:'BLAZE', emoji:'🔥', color:'#FF8C42', text:'Figma export completed',      time:'5m ago'},
-    {agent:'ECHO',  emoji:'🔊', color:'#EC4899', text:'Copy variant A/B generated', time:'8m ago'},
-    {agent:'SAGE',  emoji:'🌿', color:'#00FF94', text:'Research report saved',       time:'12m ago'},
-  ];
-  el.innerHTML = events.map(e => `
-    <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <div style="width:26px;height:26px;border-radius:7px;background:${e.color}18;border:1px solid ${e.color}33;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">${e.emoji}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:10px;font-weight:600;color:${e.color};font-family:'JetBrains Mono',monospace">${e.agent}</div>
-        <div style="font-size:11px;color:var(--text2)">${e.text}</div>
-      </div>
-      <div style="font-size:9px;color:var(--text4);font-family:'JetBrains Mono',monospace;flex-shrink:0">${e.time}</div>
-    </div>`).join('');
-}
-
-/* ══════════════════════════════════════════
-   WORKFLOW PAGE
-═══════════════════════════════════════════ */
-const WF_PASSWORD = 'Garvit123##';
-
-function unlockWorkflow() {
-  const pw = document.getElementById('wf-pw').value;
-  if (pw === WF_PASSWORD) {
-    document.getElementById('wf-gate').style.display = 'none';
-    document.getElementById('wf-canvas-area').classList.add('unlocked');
-    setTimeout(drawWorkflow, 150);
-  } else {
-    const errEl = document.getElementById('wf-error');
-    errEl.style.display = 'block';
-    document.getElementById('wf-pw').style.borderColor = 'var(--red)';
-    setTimeout(() => {
-      errEl.style.display = 'none';
-      document.getElementById('wf-pw').style.borderColor = '';
-    }, 2000);
-  }
-}
-
-/* Node graph data */
-const WF_NODES = [
-  {id:'aria',  label:'ARIA',  emoji:'🌐', color:'#00EAFF', x:0.5,  y:0.15, status:'active', role:'Orchestrator'},
-  {id:'nova',  label:'NOVA',  emoji:'✦',  color:'#A855F7', x:0.2,  y:0.38, status:'active', role:'Ideation'},
-  {id:'echo',  label:'ECHO',  emoji:'🔊', color:'#EC4899', x:0.38, y:0.38, status:'busy',   role:'Copy'},
-  {id:'blaze', label:'BLAZE', emoji:'🔥', color:'#FF8C42', x:0.56, y:0.38, status:'active', role:'Design'},
-  {id:'sage',  label:'SAGE',  emoji:'🌿', color:'#00FF94', x:0.74, y:0.38, status:'active', role:'Research'},
-  {id:'void',  label:'VOID',  emoji:'🕳', color:'#6366F1', x:0.15, y:0.65, status:'idle',   role:'Dev'},
-  {id:'hex',   label:'HEX',   emoji:'💎', color:'#FCD34D', x:0.33, y:0.65, status:'active', role:'Data'},
-  {id:'flux',  label:'FLUX',  emoji:'⚡', color:'#06B6D4', x:0.67, y:0.65, status:'busy',   role:'Automation'},
-  {id:'idea',  label:'IDEA',  emoji:'💡', color:'#F472B6', x:0.85, y:0.65, status:'active', role:'Concepts'},
-];
-
-const WF_EDGES = [
-  ['aria','nova'],['aria','echo'],['aria','blaze'],['aria','sage'],
-  ['nova','void'],['echo','hex'],['blaze','flux'],['sage','idea'],
-  ['nova','echo'],['blaze','idea'],
-];
-
-let wfParticles = [];
-let wfAnim = null;
-
-function getWfNodePos(node, W, H) {
-  const pad = 80;
-  return {x: pad + node.x*(W-2*pad), y: pad + node.y*(H-2*pad)};
-}
-
-function drawWorkflow() {
-  const cnv = document.getElementById('wf-canvas');
-  if (!cnv) return;
-  if (wfAnim) cancelAnimationFrame(wfAnim);
-
-  function resize() {
-    cnv.width  = cnv.parentElement.clientWidth;
-    cnv.height = cnv.parentElement.clientHeight || window.innerHeight - 130;
-  }
-  resize();
-
-  const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
-  const ctx = cnv.getContext('2d');
-  const NR = 30; // node radius
-
-  // Spawn particles along edges
-  function spawnParticles() {
-    WF_EDGES.forEach(([a, b]) => {
-      if (Math.random() < 0.15) {
-        wfParticles.push({from:a, to:b, t:0, speed:0.005+Math.random()*0.008});
-      }
-    });
-  }
-
-  function frame() {
-    const W = cnv.width, H = cnv.height;
-    ctx.clearRect(0, 0, W, H);
-
-    // Background
-    if (isDark()) {
-      ctx.fillStyle = '#050608';
-      ctx.fillRect(0,0,W,H);
-    }
-
-    // Draw edges
-    WF_EDGES.forEach(([aid, bid]) => {
-      const a = WF_NODES.find(n=>n.id===aid);
-      const b = WF_NODES.find(n=>n.id===bid);
-      if (!a||!b) return;
-      const ap = getWfNodePos(a,W,H), bp = getWfNodePos(b,W,H);
-      ctx.beginPath();
-      ctx.moveTo(ap.x, ap.y);
-      ctx.lineTo(bp.x, bp.y);
-      ctx.strokeStyle = isDark() ? 'rgba(0,234,255,0.1)' : 'rgba(0,0,0,0.08)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    });
-
-    // Draw particles
-    wfParticles = wfParticles.filter(p => p.t <= 1);
-    wfParticles.forEach(p => {
-      p.t += p.speed;
-      const a = WF_NODES.find(n=>n.id===p.from);
-      const b = WF_NODES.find(n=>n.id===p.to);
-      if (!a||!b) return;
-      const ap = getWfNodePos(a,W,H), bp = getWfNodePos(b,W,H);
-      const x = ap.x + (bp.x-ap.x)*p.t;
-      const y = ap.y + (bp.y-ap.y)*p.t;
-      const color = a.color;
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI*2);
-      ctx.fillStyle = color;
-      ctx.shadowBlur = 12; ctx.shadowColor = color;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    });
-
-    // Draw nodes
-    WF_NODES.forEach(node => {
-      const pos = getWfNodePos(node, W, H);
-      // Glow ring
-      const pulse = 0.7 + 0.3*Math.sin(Date.now()*0.002 + node.x*10);
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, NR + 6, 0, Math.PI*2);
-      ctx.strokeStyle = node.color + '33';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Node circle
-      const grad = ctx.createRadialGradient(pos.x-6, pos.y-6, 0, pos.x, pos.y, NR);
-      grad.addColorStop(0, node.color + 'aa');
-      grad.addColorStop(1, node.color + '33');
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, NR, 0, Math.PI*2);
-      ctx.fillStyle = grad;
-      ctx.shadowBlur = 16; ctx.shadowColor = node.color;
-      ctx.fill(); ctx.shadowBlur = 0;
-      ctx.beginPath(); ctx.arc(pos.x, pos.y, NR, 0, Math.PI*2);
-      ctx.strokeStyle = node.color;
-      ctx.lineWidth = 1.5; ctx.stroke();
-
-      // Status indicator
-      const statusCol = node.status==='active'?'#00FF94':node.status==='busy'?'#FF8C42':'#444';
-      ctx.beginPath(); ctx.arc(pos.x+NR*0.7, pos.y-NR*0.7, 5, 0, Math.PI*2);
-      ctx.fillStyle = statusCol; ctx.shadowBlur=8; ctx.shadowColor=statusCol;
-      ctx.fill(); ctx.shadowBlur=0;
-
-      // Emoji
-      ctx.font = '16px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(node.emoji, pos.x, pos.y);
-
-      // Label
-      ctx.font = "bold 10px 'JetBrains Mono',monospace";
-      ctx.fillStyle = isDark() ? '#fff' : '#000';
-      ctx.shadowBlur=0; ctx.fillText(node.label, pos.x, pos.y + NR + 14);
-
-      // Role
-      ctx.font = "9px 'JetBrains Mono',monospace";
-      ctx.fillStyle = isDark() ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
-      ctx.fillText(node.role, pos.x, pos.y + NR + 26);
-    });
-
-    spawnParticles();
-    wfAnim = requestAnimationFrame(frame);
-  }
-
-  frame();
-
-  // Click to open panel
-  cnv.onclick = (e) => {
-    const rect = cnv.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    const W = cnv.width, H = cnv.height;
-    const hit = WF_NODES.find(n => {
-      const pos = getWfNodePos(n, W, H);
-      return Math.hypot(mx - pos.x, my - pos.y) < 36;
-    });
-    if (hit) openWfPanel(hit);
-  };
-}
-
-function openWfPanel(node) {
-  const panel = document.getElementById('wf-panel');
-  const content = document.getElementById('wf-panel-content');
-  content.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <div style="width:48px;height:48px;border-radius:14px;background:${node.color}22;border:1px solid ${node.color}55;display:flex;align-items:center;justify-content:center;font-size:22px">${node.emoji}</div>
-      <div>
-        <div style="font-size:18px;font-weight:700;font-family:'Outfit',sans-serif;color:${node.color}">${node.label}</div>
-        <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">${node.role}</div>
-      </div>
+function agentCard(a){
+  const d=agentData.find(x=>x.id===a.id)||{};
+  const st=d.status||'active';
+  const tk=d.tokens_used||Math.floor(Math.random()*7000+800);
+  return `<div class="ag-card" onclick="openChat('${a.id}')">
+    <div class="ag-top">
+      <div class="ag-orb" style="background:${a.color}24">${a.emoji}</div>
+      <div style="flex:1"><div class="ag-name">${a.name}</div><div class="ag-role">${a.role}</div></div>
+      ${statusBadge(st)}
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <div class="cost-row"><span class="cost-lbl">Status</span><span style="font-size:12px;font-family:'JetBrains Mono',monospace;color:${node.status==='active'?'var(--green)':node.status==='busy'?'var(--orange)':'var(--text3)'}">${node.status.toUpperCase()}</span></div>
-      <div class="cost-row"><span class="cost-lbl">Connections</span><span class="cost-val" style="color:var(--cyan)">${WF_EDGES.filter(([a,b])=>a===node.id||b===node.id).length}</span></div>
-      <div class="cost-row"><span class="cost-lbl">Tokens Used</span><span class="cost-val">${Math.floor(Math.random()*8000+1000).toLocaleString()}</span></div>
-    </div>
-    <div style="margin-top:16px">
-      <button class="cr-action-btn" onclick="openAgentChat('${node.id}');goPage('chat')">💬 Open Chat</button>
-    </div>
-  `;
-  panel.classList.add('open');
-}
-
-function closeWfPanel() {
-  document.getElementById('wf-panel').classList.remove('open');
-}
-
-/* ══════════════════════════════════════════
-   CHAT PAGE
-═══════════════════════════════════════════ */
-function renderChatAgentList() {
-  const el = document.getElementById('chat-agent-list');
-  if (!el) return;
-  el.innerHTML = AGENTS.map(a => `
-    <div class="chat-agent-item" id="cai-${a.id}" onclick="openAgentChat('${a.id}')">
-      <div class="cai-orb" style="background:${a.color}18;border:1px solid ${a.color}33">
-        ${a.emoji}
-        <div class="cai-status on"></div>
-      </div>
-      <div class="cai-info">
-        <div class="cai-name">${a.name}</div>
-        <div class="cai-last">${a.role}</div>
-      </div>
-      <div class="cai-time">now</div>
-    </div>`).join('');
-}
-
-function openAgentChat(agentId) {
-  const agent = AGENTS.find(a => a.id === agentId);
-  if (!agent) return;
-  selectedAgent = agent;
-  goPage('chat');
-
-  // Update active state
-  document.querySelectorAll('.chat-agent-item').forEach(el => el.classList.remove('active'));
-  const item = document.getElementById('cai-' + agentId);
-  if (item) item.classList.add('active');
-
-  // Update topbar
-  const orb = document.getElementById('chat-active-orb');
-  const name = document.getElementById('chat-active-name');
-  if (orb) { orb.textContent = agent.emoji; orb.style.background = agent.color + '22'; orb.style.border = `1px solid ${agent.color}44`; }
-  if (name) name.textContent = agent.name + ' — ' + agent.role;
-
-  // Update right panel
-  renderChatRight(agent);
-
-  // Load/show history
-  const msgsEl = document.getElementById('chat-msgs');
-  if (msgsEl) {
-    const hist = chatHistory[agentId] || [];
-    if (hist.length === 0) {
-      msgsEl.innerHTML = `
-        <div class="msg agent">
-          <div class="msg-ava" style="background:${agent.color}22;border:1px solid ${agent.color}44">${agent.emoji}</div>
-          <div class="msg-body">
-            <div class="msg-bubble colored" style="--ac:${agent.color}">Kem cho boss! Main ${agent.name} hun. Kya help chahiye?</div>
-            <div class="msg-meta">${agent.name} • just now</div>
-          </div>
-        </div>`;
-    } else {
-      msgsEl.innerHTML = hist.map(m => renderMsg(m, agent)).join('');
-    }
-    msgsEl.scrollTop = msgsEl.scrollHeight;
-  }
-}
-
-function renderMsg(m, agent) {
-  if (m.role === 'user') {
-    return `<div class="msg user">
-      <div class="msg-ava" style="background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff">G</div>
-      <div class="msg-body">
-        <div class="msg-bubble">${m.content}</div>
-        <div class="msg-meta">${m.time}</div>
-      </div>
-    </div>`;
-  }
-  return `<div class="msg agent">
-    <div class="msg-ava" style="background:${agent.color}22;border:1px solid ${agent.color}44">${agent.emoji}</div>
-    <div class="msg-body">
-      <div class="msg-bubble colored" style="--ac:${agent.color}">${m.content}</div>
-      <div class="msg-meta">${agent.name} • ${m.time}</div>
-    </div>
+    <div class="ag-meta"><span>MODEL <span class="v">${a.model}</span></span>
+      <span>TOKENS <span class="v">${(tk/1000).toFixed(1)}K</span></span></div>
   </div>`;
 }
+function renderOverview(){
+  document.getElementById('ov-agents').innerHTML=AGENTS.map(agentCard).join('');
+  const tasks=(pipelineData.tasks||[
+    {name:'Brand identity refresh',pct:72},
+    {name:'Q3 social campaign',pct:45},
+    {name:'Motion reel edit',pct:88}]);
+  document.getElementById('ov-tasks').innerHTML=tasks.slice(0,3).map(t=>`
+    <div class="prog-row"><div class="prog-meta"><span>${t.name}</span><span class="v">${t.pct}%</span></div>
+    <div class="bar"><div class="bar-fill" style="width:${t.pct}%"></div></div></div>`).join('');
+  const avg=Math.round(tasks.reduce((s,t)=>s+t.pct,0)/tasks.length);
+  document.getElementById('ov-progress').textContent=avg+'%';
+  document.getElementById('ov-progress-bar').style.width=avg+'%';
+  document.getElementById('ov-tokens').innerHTML=tokenBars();
+  document.getElementById('ov-cost-d').textContent='$'+(usageData.cost_today||0.12).toFixed(2);
+  document.getElementById('ov-cost-m').textContent='$'+(usageData.cost_month||3.48).toFixed(2);
+  document.getElementById('ov-pipe').innerHTML=pipeHTML();
+  drawPerf();
+}
+function tokenBars(){
+  const bars=[
+    ['Groq',usageData.groq_tokens||45000,'#4F8EFF'],
+    ['OpenRouter',usageData.openrouter_tokens||28000,'#FF8C42'],
+    ['Gemini',usageData.gemini_tokens||12000,'#00EAFF'],
+    ['Claude',usageData.claude_tokens||8000,'#A855F7']];
+  return bars.map(([l,v,c])=>`<div class="tk-row"><span class="tk-lbl">${l}</span>
+    <div class="tk-bar"><div class="tk-fill" style="width:${Math.min(100,v/1000)}%;
+    background:linear-gradient(90deg,${c},${c}99)"></div></div>
+    <span class="tk-val">${(v/1000).toFixed(0)}K</span></div>`).join('');
+}
+function pipeHTML(){
+  const steps=pipelineData.steps||[
+    {emoji:'🔍',label:'Scrape',status:'done'},{emoji:'🧠',label:'Match',status:'done'},
+    {emoji:'✍',label:'Tailor',status:'current'},{emoji:'🔐',label:'Auth',status:'pending'},
+    {emoji:'📤',label:'Apply',status:'pending'},{emoji:'📊',label:'Log',status:'pending'}];
+  return steps.map((s,i)=>`${i?`<div class="pipe-arrow ${steps[i-1].status==='done'?'on':''}"></div>`:''}
+    <div class="pipe-step"><div class="pipe-orb ${s.status}">${s.emoji}</div>
+    <div class="pipe-lbl">${s.label}</div></div>`).join('');
+}
+function renderAgentsView(){
+  document.getElementById('agents-grid').innerHTML=AGENTS.map(agentCard).join('');
+}
+function renderPipelineView(){
+  document.getElementById('pl-pipe').innerHTML=pipeHTML();
+  document.getElementById('pl-log').innerHTML=[
+    ['✅','Scrape complete — 47 jobs found','10:32'],
+    ['✅','Match complete — 12 scored 70+','10:33'],
+    ['⏳','Tailor in progress — resume draft','10:35']
+  ].map(([i,t,tm])=>`<div class="list-row"><span style="font-size:16px">${i}</span>
+    <span style="flex:1;font-size:13px;color:var(--text2)">${t}</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)">${tm}</span></div>`).join('');
+}
+function renderTasksView(){
+  const tasks=[
+    ['aria','Orchestrate today\'s creative run',60],
+    ['desi','Review homepage mockup',40],
+    ['copy','Write 5 campaign headlines',75],
+    ['mova','Edit 15s motion teaser',90],
+    ['arch','Push dashboard build to GitHub',100],
+    ['soci','Draft Instagram carousel',25]];
+  document.getElementById('tasks-list').innerHTML=tasks.map(([id,t,p])=>{
+    const a=A(id);
+    return `<div class="list-row">
+      <div class="ag-orb" style="width:34px;height:34px;font-size:15px;background:${a.color}24">${a.emoji}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;margin-bottom:5px">${t}</div>
+        <div class="bar" style="height:4px"><div class="bar-fill" style="width:${p}%"></div></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${a.color}">${a.name}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue)">${p}%</div>
+      </div></div>`;
+  }).join('');
+}
+function renderLogsView(){
+  const logs=[
+    ['aria','Pipeline started for today.','10:30'],
+    ['bryn','But what\'s the strategy tho? Sochna padega.','10:28'],
+    ['idea','Bhai ek idea aaya — neon brand kit!','10:25'],
+    ['desi','Ye gradient thoda ugly hai, fix karo.','10:21'],
+    ['copy','Headline punchy bana di, check karo.','10:17']];
+  document.getElementById('logs-list').innerHTML=logs.map(([id,m,tm])=>{
+    const a=A(id);
+    return `<div class="list-row">
+      <div class="ag-orb" style="width:30px;height:30px;font-size:13px;background:${a.color}24">${a.emoji}</div>
+      <div style="flex:1"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${a.color};margin-bottom:2px">${a.name}</div>
+      <div style="font-size:13px;color:var(--text2)">${m}</div></div>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)">${tm}</span></div>`;
+  }).join('');
+}
+function renderModelsView(){
+  const models=[
+    ['Groq','llama-3.3-70b-versatile','#4F8EFF','PRIMARY','30 RPM'],
+    ['OpenRouter','dolphin-mixtral-8x7b','#FF8C42','FALLBACK','$0.20/1M'],
+    ['Gemini','gemini-1.5-flash','#00EAFF','VISION','free tier'],
+    ['Claude','claude-haiku-4-5','#A855F7','CHAT','$0.80/1M']];
+  document.getElementById('models-grid').innerHTML=models.map(([n,m,c,tag,meta])=>`
+    <div class="card">
+      <div class="card-t" style="color:${c}">${n}</div>
+      <div class="card-s">${tag}</div>
+      <div class="cost-row"><span>Model</span><span class="v" style="color:${c}">${m}</span></div>
+      <div class="cost-row"><span>Status</span><span class="v" style="color:var(--green)">● ONLINE</span></div>
+      <div class="cost-row"><span>Rate</span><span class="v">${meta}</span></div>
+    </div>`).join('');
+}
+function renderUsageView(){
+  document.getElementById('us-tokens').innerHTML=tokenBars();
+  const d=usageData.cost_today||0.12;
+  document.getElementById('us-d').textContent='$'+d.toFixed(2);
+  document.getElementById('us-w').textContent='$'+(d*7).toFixed(2);
+  document.getElementById('us-m').textContent='$'+(usageData.cost_month||3.48).toFixed(2);
+  document.getElementById('us-p').textContent='$'+(d*30).toFixed(2);
+}
+function drawPerf(){
+  const cv=document.getElementById('perf-canvas');
+  if(!cv||!cv.offsetWidth)return;
+  const ctx=cv.getContext('2d'),dpr=devicePixelRatio;
+  const W=cv.offsetWidth,H=96;
+  cv.width=W*dpr;cv.height=H*dpr;ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  const pts=Array.from({length:24},()=>Math.random()*55+12);
+  const max=Math.max(...pts),pad=6;
+  ctx.beginPath();
+  pts.forEach((v,i)=>{
+    const x=pad+i/(pts.length-1)*(W-2*pad), y=10+(H-26)*(1-v/max);
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+  ctx.lineTo(W-pad,H-12);ctx.lineTo(pad,H-12);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'rgba(79,142,255,0.32)');g.addColorStop(1,'rgba(79,142,255,0)');
+  ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();
+  pts.forEach((v,i)=>{
+    const x=pad+i/(pts.length-1)*(W-2*pad), y=10+(H-26)*(1-v/max);
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+  ctx.strokeStyle='#4F8EFF';ctx.lineWidth=2;
+  ctx.shadowBlur=8;ctx.shadowColor='rgba(79,142,255,0.6)';ctx.stroke();ctx.shadowBlur=0;
+}
 
-function renderChatRight(agent) {
-  const infoEl = document.getElementById('cr-agent-info');
-  const platEl = document.getElementById('cr-platforms');
-  if (infoEl) {
-    const d = agentData.find(a=>a.id===agent.id)||{};
-    infoEl.innerHTML = `
-      <div class="cr-stat"><span class="cr-stat-l">Model</span><span class="cr-stat-v">${agent.model}</span></div>
-      <div class="cr-stat"><span class="cr-stat-l">Tokens</span><span class="cr-stat-v">${((d.tokens_used||Math.floor(Math.random()*8000+500))/1000).toFixed(1)}K</span></div>
-      <div class="cr-stat"><span class="cr-stat-l">Cost Today</span><span class="cr-stat-v">$${(Math.random()*0.5).toFixed(3)}</span></div>
-      <div class="cr-stat"><span class="cr-stat-l">Tasks Done</span><span class="cr-stat-v">${Math.floor(Math.random()*20+3)}</span></div>`;
+/* ══ WORKFLOW ══ */
+function checkPassword(){
+  const val=document.getElementById('pw-input').value;
+  if(val===WF_PASSWORD){
+    wfUnlocked=true;
+    document.getElementById('pw-modal').style.display='none';
+    document.getElementById('wf-stage').classList.add('show');
+    setTimeout(drawWorkflow,80);
+  }else{
+    const m=document.getElementById('pw-modal');
+    m.classList.add('shake');
+    document.getElementById('pw-err').textContent='Incorrect password';
+    setTimeout(()=>m.classList.remove('shake'),420);
   }
-  if (platEl) {
-    platEl.innerHTML = agent.platforms.map(p =>
-      `<div class="cr-chip on">✓ ${p}</div>`).join('');
+}
+const WF_NODES=[
+  {id:'aria',x:0.5, y:0.10},
+  {id:'arch',x:0.17,y:0.27},
+  {id:'nova',x:0.83,y:0.27},
+  {id:'bryn',x:0.5, y:0.27},
+  {id:'idea',x:0.5, y:0.44},
+  {id:'desi',x:0.33,y:0.61},
+  {id:'copy',x:0.67,y:0.61},
+  {id:'mova',x:0.5, y:0.77},
+  {id:'soci',x:0.5, y:0.91},
+];
+const WF_EDGES=[['aria','bryn'],['aria','arch'],['aria','nova'],['bryn','idea'],
+  ['idea','desi'],['idea','copy'],['desi','mova'],['copy','mova'],['mova','soci']];
+let wfParticles=[],wfRAF=null,wfDash=0;
+function wfPos(n,W,H){return {x:n.x*W,y:80+n.y*(H-160)};}
+function drawWorkflow(){
+  const cv=document.getElementById('wf-canvas');
+  if(!cv)return;
+  if(wfRAF)cancelAnimationFrame(wfRAF);
+  function frame(){
+    cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+    const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+    ctx.clearRect(0,0,W,H);
+    wfDash=(wfDash+0.6)%16;
+    WF_EDGES.forEach(([f,t])=>{
+      const a=wfPos(WF_NODES.find(n=>n.id===f),W,H);
+      const b=wfPos(WF_NODES.find(n=>n.id===t),W,H);
+      ctx.save();
+      ctx.setLineDash([7,9]);ctx.lineDashOffset=-wfDash;
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+      ctx.strokeStyle='rgba(0,234,255,0.35)';ctx.lineWidth=1.6;ctx.stroke();
+      ctx.restore();
+    });
+    if(Math.random()<0.08){
+      const e=WF_EDGES[Math.floor(Math.random()*WF_EDGES.length)];
+      wfParticles.push({f:e[0],t:e[1],p:0});
+    }
+    wfParticles=wfParticles.filter(pt=>pt.p<=1);
+    wfParticles.forEach(pt=>{
+      pt.p+=0.012;
+      const a=wfPos(WF_NODES.find(n=>n.id===pt.f),W,H);
+      const b=wfPos(WF_NODES.find(n=>n.id===pt.t),W,H);
+      const x=a.x+(b.x-a.x)*pt.p, y=a.y+(b.y-a.y)*pt.p;
+      ctx.beginPath();ctx.arc(x,y,4,0,7);
+      ctx.fillStyle='#00EAFF';ctx.shadowBlur=12;ctx.shadowColor='#00EAFF';
+      ctx.fill();ctx.shadowBlur=0;
+    });
+    WF_NODES.forEach(n=>{
+      const a=A(n.id),pos=wfPos(n,W,H);
+      ctx.beginPath();ctx.arc(pos.x,pos.y,34,0,7);
+      ctx.strokeStyle=a.color+'55';ctx.lineWidth=2;ctx.stroke();
+      const g=ctx.createRadialGradient(pos.x-8,pos.y-8,0,pos.x,pos.y,28);
+      g.addColorStop(0,a.color+'cc');g.addColorStop(1,a.color+'33');
+      ctx.beginPath();ctx.arc(pos.x,pos.y,28,0,7);
+      ctx.fillStyle=g;ctx.shadowBlur=16;ctx.shadowColor=a.color;ctx.fill();ctx.shadowBlur=0;
+      ctx.beginPath();ctx.arc(pos.x+20,pos.y-20,5,0,7);
+      ctx.fillStyle='#00FF94';ctx.shadowBlur=8;ctx.shadowColor='#00FF94';ctx.fill();ctx.shadowBlur=0;
+      ctx.font='17px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(a.emoji,pos.x,pos.y+1);
+      ctx.font="700 11px 'JetBrains Mono',monospace";ctx.fillStyle='#fff';
+      ctx.fillText(a.name,pos.x,pos.y+46);
+      ctx.font="9px 'JetBrains Mono',monospace";ctx.fillStyle='rgba(255,255,255,0.4)';
+      ctx.fillText(a.role,pos.x,pos.y+58);
+    });
+    wfRAF=requestAnimationFrame(frame);
   }
+  frame();
+  cv.onclick=e=>{
+    const r=cv.getBoundingClientRect();
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    const hit=WF_NODES.find(n=>{
+      const p=wfPos(n,cv.width,cv.height);
+      return Math.hypot(mx-p.x,my-p.y)<32;
+    });
+    if(hit)openWfPanel(hit.id);
+  };
 }
-
-function addChatMsg(role, content) {
-  if (!selectedAgent) return;
-  sendUserMsg(content);
+function openWfPanel(id){
+  const a=A(id);
+  const conn=WF_EDGES.filter(e=>e[0]===id||e[1]===id).length;
+  document.getElementById('wf-panel-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <div class="ag-orb" style="width:50px;height:50px;font-size:22px;background:${a.color}2a;border:1px solid ${a.color}55">${a.emoji}</div>
+      <div><div style="font-size:18px;font-weight:700;color:${a.color}">${a.name}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)">${a.role}</div></div>
+    </div>
+    <div class="cost-row"><span>Status</span><span class="v" style="color:var(--green)">ACTIVE</span></div>
+    <div class="cost-row"><span>Connections</span><span class="v" style="color:var(--cyan)">${conn}</span></div>
+    <div class="cost-row"><span>Model</span><span class="v">${a.model}</span></div>
+    <div class="cost-row"><span>Tokens</span><span class="v">${Math.floor(Math.random()*8000+1000).toLocaleString()}</span></div>
+    <button class="cta" style="width:100%;margin-top:16px;font-size:13px;padding:11px"
+      onclick="openChat('${id}');showPage('chat')">💬 Open Chat</button>`;
+  document.getElementById('wf-panel').classList.add('open');
 }
+function closeWfPanel(){document.getElementById('wf-panel').classList.remove('open');}
 
-async function sendChat() {
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if (!text || !selectedAgent) return;
-  input.value = '';
-  input.style.height = 'auto';
-  sendUserMsg(text);
+/* ══ CHAT ══ */
+function renderChatList(){
+  const q=(document.getElementById('cl-search')?.value||'').toLowerCase();
+  document.getElementById('cl-list').innerHTML=AGENTS
+    .filter(a=>a.name.toLowerCase().includes(q)||a.role.toLowerCase().includes(q))
+    .map(a=>{
+      const last=(chatLog[a.id]||[]).slice(-1)[0];
+      return `<div class="cl-item ${currentAgent===a.id?'active':''}" id="cl-${a.id}" onclick="openChat('${a.id}')">
+        <div class="cl-orb" style="background:${a.color}24">${a.emoji}
+          <span class="ha-dot" style="background:var(--green)"></span></div>
+        <div class="cl-info"><div class="cl-name">${a.name}</div>
+        <div class="cl-prev">${last?last.text:a.role}</div></div></div>`;
+    }).join('');
 }
-
-function sendUserMsg(text) {
-  const agent = selectedAgent;
-  const msgsEl = document.getElementById('chat-msgs');
-  if (!msgsEl) return;
-
-  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-  const msg = {role:'user', content:text, time};
-  if (!chatHistory[agent.id]) chatHistory[agent.id] = [];
-  chatHistory[agent.id].push(msg);
-
-  msgsEl.insertAdjacentHTML('beforeend', renderMsg(msg, agent));
-
-  // Typing indicator
-  const typId = 'typ-' + Date.now();
-  msgsEl.insertAdjacentHTML('beforeend', `
-    <div class="msg agent" id="${typId}">
-      <div class="msg-ava" style="background:${agent.color}22;border:1px solid ${agent.color}44">${agent.emoji}</div>
-      <div class="msg-body"><div class="typing-ind"><div class="td"></div><div class="td"></div><div class="td"></div></div></div>
-    </div>`);
-  msgsEl.scrollTop = msgsEl.scrollHeight;
-
-  // Call API — force Hinglish system prompt for openrouter / dolphin model
-  const model = document.getElementById('chat-model-select').value;
-  const hinglishSystem = `Tu ek desi AI agent hai Discord pe.\nHinglish mein bol — Hindi+English mix.\nSHORT — max 2 lines.\nCasual, friendly.\nNo markdown, no **bold**, no bullet points.\nJust talk like a desi friend.`;
-  const useHinglish = (model === 'openrouter' || model === 'dolphin');
-  fetch('/api/chat', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      agent: agent.id,
-      message: text,
-      model,
-      ...(useHinglish ? {system: hinglishSystem, provider: 'openrouter'} : {}),
-    }),
+function filterAgents(){renderChatList();}
+function toggleGroup(){
+  groupMode=!groupMode;
+  document.getElementById('group-btn').classList.toggle('on',groupMode);
+  document.getElementById('group-btn').textContent=groupMode?'⊕ Group Chat · ON':'⊕ Group Chat';
+}
+function openChat(id){
+  currentAgent=id;
+  showPage('chat');
+  renderChatList();
+  const a=A(id);
+  document.getElementById('cm-orb').textContent=a.emoji;
+  document.getElementById('cm-orb').style.background=a.color+'24';
+  document.getElementById('cm-name').textContent=a.name;
+  document.getElementById('cm-role').textContent=a.role;
+  renderMessages();
+  renderChatRight(a);
+}
+function renderMessages(){
+  const box=document.getElementById('cm-msgs');
+  const a=A(currentAgent);
+  const log=chatLog[currentAgent]||[];
+  if(!log.length){
+    box.innerHTML=`<div class="msg agent" style="--ac:${a.color}">
+      <div class="msg-av" style="background:${a.color}24">${a.emoji}</div>
+      <div><div class="msg-bubble">Hey boss! Main ${a.name} hun. Bata kya kaam hai 👋</div>
+      <div class="msg-meta">${a.name} · now</div></div></div>`;
+    return;
+  }
+  box.innerHTML=log.map(m=>msgHTML(m,a)).join('');
+  box.scrollTop=box.scrollHeight;
+}
+function msgHTML(m,a){
+  if(m.role==='user'){
+    return `<div class="msg user">
+      <div class="msg-av" style="background:linear-gradient(135deg,var(--blue),var(--purple))">G</div>
+      <div><div class="msg-bubble">${m.text}</div><div class="msg-meta" style="text-align:right">${m.time}</div></div></div>`;
+  }
+  return `<div class="msg agent" style="--ac:${a.color}">
+    <div class="msg-av" style="background:${a.color}24">${a.emoji}</div>
+    <div><div class="msg-bubble">${m.text}</div><div class="msg-meta">${a.name} · ${m.time}</div></div></div>`;
+}
+function renderChatRight(a){
+  const d=agentData.find(x=>x.id===a.id)||{};
+  document.getElementById('chat-right').innerHTML=`
+    <div class="cr-av" style="background:${a.color}2a">${a.emoji}</div>
+    <div class="cr-name">${a.name}</div>
+    <div class="cr-role">${a.role}</div>
+    <div style="text-align:center;margin-bottom:6px">${statusBadge(d.status||'active')}</div>
+    <div class="cr-sec">Stats</div>
+    <div class="cr-stat"><span>Model</span><span class="v">${a.model}</span></div>
+    <div class="cr-stat"><span>Tokens today</span><span class="v">${((d.tokens_used||Math.random()*7000+800)/1000).toFixed(1)}K</span></div>
+    <div class="cr-stat"><span>Cost today</span><span class="v">$${(Math.random()*0.4).toFixed(3)}</span></div>
+    <div class="cr-stat"><span>Tasks done</span><span class="v">${Math.floor(Math.random()*18+3)}</span></div>
+    <div class="cr-sec">Platforms</div>
+    <div>${a.platforms.map(p=>`<span class="chip">${p}</span>`).join('')}</div>
+    <div class="cr-sec">Quick Update</div>
+    <div class="cr-btns">
+      <div class="cr-btn" onclick="quickStatus('idle')">IDLE</div>
+      <div class="cr-btn" onclick="quickStatus('busy')">BUSY</div>
+      <div class="cr-btn" onclick="quickStatus('waiting')">WAITING</div>
+      <div class="cr-btn" onclick="quickStatus('offline')">OFFLINE</div>
+    </div>`;
+}
+function quickStatus(st){
+  if(!currentAgent)return;
+  let d=agentData.find(x=>x.id===currentAgent);
+  if(!d){d={id:currentAgent};agentData.push(d);}
+  d.status=st;
+  renderChatRight(A(currentAgent));
+}
+function sendChat(){
+  const ta=document.getElementById('cm-text');
+  const text=ta.value.trim();
+  if(!text||!currentAgent)return;
+  ta.value='';ta.style.height='auto';
+  const a=A(currentAgent);
+  const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  (chatLog[currentAgent]=chatLog[currentAgent]||[]).push({role:'user',text,time});
+  renderMessages();
+  const box=document.getElementById('cm-msgs');
+  const typId='typ'+Date.now();
+  box.insertAdjacentHTML('beforeend',
+    `<div class="msg agent" id="${typId}"><div class="msg-av" style="background:${a.color}24">${a.emoji}</div>
+     <div class="typing"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></div></div>`);
+  box.scrollTop=box.scrollHeight;
+  // ALWAYS use the desi Hinglish system prompt — never the YAML orchestrator prompt
+  const chatSystem=`Tu ${a.name} hai — desi AI agent.
+Hinglish mein bol — Hindi+English mix.
+MAX 2 lines. Casual WhatsApp style.
+No markdown, no bold, no bullets.
+Desi friend ki tarah baat kar.`;
+  const model=document.getElementById('cm-model').value;
+  fetch('/api/chat',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({agent:currentAgent,message:text,model,system:chatSystem})
   })
-  .then(r => r.json())
-  .then(data => {
+  .then(r=>r.json())
+  .then(data=>{
     document.getElementById(typId)?.remove();
-    const reply = data.reply || data.message || data.response || 'Bhai response nahi aaya. Try karo dobara.';
-    const rMsg = {role:'agent', content:reply, time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})};
-    chatHistory[agent.id].push(rMsg);
-    msgsEl.insertAdjacentHTML('beforeend', renderMsg(rMsg, agent));
-    msgsEl.scrollTop = msgsEl.scrollHeight;
+    const reply=data.reply||data.message||data.response||'Bhai ek min, dobara try kar.';
+    chatLog[currentAgent].push({role:'agent',text:reply,
+      time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+    renderMessages();renderChatList();
   })
-  .catch(() => {
+  .catch(()=>{
     document.getElementById(typId)?.remove();
-    const rMsg = {role:'agent', content:'Yaar API se baat nahi ho rahi. Server check karo.', time:'now'};
-    chatHistory[agent.id].push(rMsg);
-    msgsEl.insertAdjacentHTML('beforeend', renderMsg(rMsg, agent));
-    msgsEl.scrollTop = msgsEl.scrollHeight;
+    chatLog[currentAgent].push({role:'agent',text:'Yaar server se baat nahi ho rahi 😅',time:'now'});
+    renderMessages();
   });
 }
 
-function toggleGroupChat() {
-  isGroupChat = document.getElementById('group-chat-toggle').checked;
-  document.querySelectorAll('.chat-agent-item').forEach(el => {
-    el.style.opacity = isGroupChat ? '1' : '1';
-  });
+/* ══ API POLL ══ */
+async function fetchAll(){
+  try{
+    const [ag,us,pl]=await Promise.all([
+      fetch('/api/agents').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/usage').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/pipeline').then(r=>r.json()).catch(()=>({}))
+    ]);
+    agentData=Array.isArray(ag)?ag:(ag.agents||[]);
+    usageData=us||{};pipelineData=pl||{};
+  }catch(e){console.warn('api',e);}
+  renderHome();renderOverview();
+  document.getElementById('sync').textContent='synced just now';
 }
 
-/* ══════════════════════════════════════════
-   POLL & INIT
-═══════════════════════════════════════════ */
-renderChatAgentList();
-goPage('home');
+/* ══ INIT ══ */
+renderChatList();
+const startHash=location.hash.replace('#','');
+showPage(['home','dashboard','workflow','chat'].includes(startHash)?startHash:'home');
+renderHome();renderOverview();
 fetchAll();
-setInterval(fetchAll, 30000);
-
-// Update sync tag every second
-setInterval(() => {
-  const el = document.getElementById('sync-tag');
-  if (!el) return;
-  const s = Math.floor((Date.now() - lastSync) / 1000);
-  el.textContent = s < 5 ? 'SYNCED JUST NOW' : `SYNCED ${s}s AGO`;
-}, 1000);
-
-// Init home stats even without API
-renderHomeStats();
-renderHomeAgents();
+setInterval(fetchAll,30000);
 </script>
 </body>
 </html>
